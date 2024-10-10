@@ -1,4 +1,6 @@
 bin
 *.swp
 obj
+img
 
+*.bmp

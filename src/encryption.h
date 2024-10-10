@@ -19,8 +19,8 @@ int derive_key_and_iv(const char *password, const EVP_CIPHER *cipher,
 
 const EVP_CIPHER *get_cipher(EncAlgo enc_algo, EncMode enc_mode);
 
-int encrypt(unsigned char *plaintext, int plaintext_len, const char *password,
-            unsigned char **ciphertext, int *ciphertext_len, EncAlgo enc_algo,
+int encrypt(unsigned char *plaintext, long plaintext_len, const char *password,
+            unsigned char **ciphertext, long *ciphertext_len, EncAlgo enc_algo,
             EncMode enc_mode);
 
 #endif // ENCRYPTION_H

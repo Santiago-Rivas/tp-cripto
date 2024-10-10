@@ -11,7 +11,6 @@
 typedef enum { EMBED, EXTRACT, INVALID_OP } Operation;
 typedef enum { LSB1, LSB4, LSBI, INVALID_STEG_ALGO, EMPTY_STEG_ALGO } StegAlgo;
 
-int embed(char *input_file, char *transport);
 
 typedef struct {
     Operation operation;
@@ -23,6 +22,10 @@ typedef struct {
     EncMode enc_mode;
     const char *password;
 } State;
+
+int embed(State * state);
+
+int extract(State *state);
 
 void print_usage();
 

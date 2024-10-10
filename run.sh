@@ -15,8 +15,8 @@ echo TEST 1
 ./bin/stegobmp\
     -embed\
     -in "test/test_1.txt"\
-    -p "imagen1.bmp"\
-    -out "imagenmas1.bmp"\
+    -p "img/ejemplo2024sinEnc/lado.bmp" \
+    -out "out.bmp"\
     -pass "hola"\
     -steg "LSBI"
 
@@ -33,7 +33,7 @@ for algo in "${algos[@]}"; do
         ./bin/stegobmp \
             -embed \
             -in "test/test_1.txt" \
-            -p "imagen1.bmp" \
+            -p "img/ejemplo2024sinEnc/lado.bmp" \
             -out "imagenmas1_${algo}_${mode}.bmp" \
             -pass "hola" \
             -steg "LSBI" \

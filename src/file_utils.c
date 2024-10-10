@@ -45,3 +45,65 @@ unsigned char *read_file_data(const char *filename, long *size) {
   fclose(file);
   return data;
 }
+
+unsigned char *read_bmp(const char *filename, BMPHeader *header,
+                        long *bmp_size) {
+  FILE *file = fopen(filename, "rb");
+  if (!file) {
+    perror("Error opening file");
+    return NULL;
+  }
+
+  // Read the BMP header
+  fread(header, sizeof(BMPHeader), 1, file);
+
+  // Check if the file is a BMP file
+  if (header->type != 0x4D42) {
+    fprintf(stderr, "Error: Not a BMP file\n");
+    fclose(file);
+    return NULL;
+  }
+
+  // Calculate the size of the pixel data
+  *bmp_size = header->size - header->offset;
+
+  // Allocate memory for the pixel data
+  unsigned char *bmp_data = (unsigned char *)malloc(*bmp_size);
+  if (!bmp_data) {
+    perror("Error allocating memory");
+    fclose(file);
+    return NULL;
+  }
+
+  // Move to the pixel data
+  fseek(file, header->offset, SEEK_SET);
+  fread(bmp_data, 1, *bmp_size, file);
+  fclose(file);
+
+  return bmp_data;
+}
+
+int write_bmp_to_file(const char* filename, BMPImage* image) {
+    FILE* file = fopen(filename, "wb");
+    if (!file) {
+        perror("Error opening file");
+        return 0;
+    }
+
+    size_t written = fwrite(&image->header, sizeof(BMPHeader), 1, file);
+    if (written != 1) {
+        perror("Error writing header");
+        fclose(file);
+        return 0;
+    }
+
+    written = fwrite(image->data, 1, image->image_size, file);
+    if (written != image->image_size) {
+        perror("Error writing image data");
+        fclose(file);
+        return 0;
+    }
+
+    fclose(file);
+    return 1;
+}
