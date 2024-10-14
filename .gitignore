@@ -1,8 +1,5 @@
 bin
 *.swp
 obj
-img
-
-*.bmp
 
 .vscode
