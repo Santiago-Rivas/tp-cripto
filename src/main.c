@@ -201,8 +201,8 @@ int embed(State *state) {
     data_to_encrypt = NULL;
   }
 
-  size_t total_embeded_len = sizeof(long) + data_to_embed_len;
-  unsigned char *data_to_embed = malloc(total_embeded_len);
+  size_t total_embedded_len = sizeof(long) + data_to_embed_len;
+  unsigned char *data_to_embed = malloc(total_embedded_len);
   if (!data_to_embed) {
     fprintf(stderr, "Memory allocation failed.\n");
     free(encrypted_data);
@@ -217,7 +217,7 @@ int embed(State *state) {
   memcpy(data_to_embed, &data_to_embed_len, sizeof(long));
   memcpy(data_to_embed + sizeof(long), encrypted_data, data_to_embed_len);
 
-  if (carrier.image_size < total_embeded_len * 8) {
+  if (carrier.image_size < total_embedded_len * 8) {
     fprintf(stderr, "Carrier image is too small for message.\n");
     free(encrypted_data);
     free(carrier.data);
@@ -236,15 +236,15 @@ int embed(State *state) {
 
   int i = 0;
   int j = 0;
-  while (i < total_embeded_len) {
+  while (i < total_embedded_len) {
     unsigned char byte = data_to_embed[i];
-    for (int k = 0; k < 8; k++) {
+    for (int k = 0; k < 8; k++, j++) {
       unsigned char last_bit =
           (byte >> k) & 0x01; // shift to current bit and get it
       unsigned char in = carrier.data[j] & 0xFE; // Clear last bit
       unsigned char new =
           in | last_bit; // XOR with 0 and the last_bit = last_bit
-      output.data[j++] = new;
+      output.data[j] = new;
     }
     i++;
   }
