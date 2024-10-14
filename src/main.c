@@ -11,16 +11,18 @@ int main(int argc, char *argv[]) {
                  EMPTY_STEG_ALGO, AES128, CBC,  NULL};
 
   state.operation = get_operation(argv[1]);
-  if (!read_params(&state, argc, argv)) {
-    print_usage();
-    return 1;
-  }
 
   if (state.operation == INVALID_OP) {
     printf("Error: First argument must be -embed or -extract.\n");
     print_usage();
     return 1;
   }
+
+  if (!read_params(&state, argc, argv)) {
+    print_usage();
+    return 1;
+  }
+
 
   if (state.steg_algo == EMPTY_STEG_ALGO) {
     printf("Error: Steganography algorithm must be provided.\n");
@@ -31,19 +33,19 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  printf("Mode: %s\n", state.operation == EMBED ? "Embed" : "Extract");
-  printf("Input file: %s\n",
-         state.input_file ? state.input_file : "Not provided");
-  printf("Carrier BMP: %s\n",
-         state.carrier_bmp ? state.carrier_bmp : "Not provided");
-  printf("Output file: %s\n",
-         state.output_file ? state.output_file : "Not provided");
+  // printf("Mode: %s\n", state.operation == EMBED ? "Embed" : "Extract");
+  // printf("Input file: %s\n",
+  //        state.input_file ? state.input_file : "Not provided");
+  // printf("Carrier BMP: %s\n",
+  //        state.carrier_bmp ? state.carrier_bmp : "Not provided");
+  // printf("Output file: %s\n",
+  //        state.output_file ? state.output_file : "Not provided");
 
-  if (state.password != NULL) {
-    printf("Encryption with password '%s'\n", state.password);
-  } else {
-    printf("No encryption applied.\n");
-  }
+  // if (state.password != NULL) {
+  //   printf("Encryption with password '%s'\n", state.password);
+  // } else {
+  //   printf("No encryption applied.\n");
+  // }
 
   if (state.operation == EMBED) {
     printf("EMBED\n");
@@ -102,6 +104,9 @@ int read_params(State *state, int argc, char *argv[]) {
 }
 
 StegAlgo get_steg_algo(char *steg_algo) {
+  if (steg_algo == NULL) {
+    return INVALID_STEG_ALGO;
+  }
   if (strcmp(steg_algo, "LSB1") != 0) {
     return LSB1;
   }
@@ -109,6 +114,7 @@ StegAlgo get_steg_algo(char *steg_algo) {
     return LSB4;
   }
   if (strcmp(steg_algo, "LSBI") != 0) {
+    return LSBI;
   }
   return INVALID_STEG_ALGO;
 }
@@ -153,6 +159,9 @@ int embed(State *state) {
     return 1;
   }
 
+  char *extension = get_file_extension(state->input_file);
+  size_t ext_length = strlen(extension) + 1; // +1 for '\0'
+
   BMPImage carrier;
   carrier.data =
       read_bmp(state->carrier_bmp, &carrier.header, &carrier.image_size);
@@ -161,9 +170,6 @@ int embed(State *state) {
     free(file_data);
     return 1;
   }
-
-  char *extension = get_file_extension(state->input_file);
-  size_t ext_length = strlen(extension) + 1; // +1 for '\0'
 
   // Prepare data to encrypt: size of real file || file data || extension
   size_t total_size = sizeof(long) + file_size +
