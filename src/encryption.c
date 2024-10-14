@@ -5,10 +5,12 @@ const char *mode_to_string(EncMode enc_mode);
 
 int encrypt(unsigned char *plaintext, long plaintext_len, const char *password,
             unsigned char **ciphertext, long *ciphertext_len, EncAlgo enc_algo,
-            EncMode enc_mode) {
+            EncMode enc_mode)
+{
 
   const EVP_CIPHER *cipher = get_cipher(enc_algo, enc_mode);
-  if (!cipher) {
+  if (!cipher)
+  {
     printf("Error: Invalid cipher algorithm or mode.\n");
     return 0;
   }
@@ -30,14 +32,16 @@ int encrypt(unsigned char *plaintext, long plaintext_len, const char *password,
   int len;
   int ciphertext_size;
   if (EVP_EncryptUpdate(ctx, *ciphertext, &len, plaintext, plaintext_len) !=
-      1) {
+      1)
+  {
     printf("Error: EVP_EncryptUpdate.\n");
     return 0;
   }
 
   ciphertext_size = len;
 
-  if (EVP_EncryptFinal_ex(ctx, *ciphertext + len, &len) != 1) {
+  if (EVP_EncryptFinal_ex(ctx, *ciphertext + len, &len) != 1)
+  {
     printf("Error: EVP_EncryptFinal_ex.\n");
     return 0;
   }
@@ -54,30 +58,35 @@ int encrypt(unsigned char *plaintext, long plaintext_len, const char *password,
 
 // Function to derive key and IV from password
 int derive_key_and_iv(const char *password, const EVP_CIPHER *cipher,
-                      unsigned char *key, unsigned char *iv) {
+                      unsigned char *key, unsigned char *iv)
+{
 
   int key_len = EVP_CIPHER_key_length(cipher);
 
   if (!PKCS5_PBKDF2_HMAC(password, strlen(password), NULL, 0, ITERATIONS,
-                         EVP_sha256(), key_len, key)) {
+                         EVP_sha256(), key_len, key))
+  {
     return 0;
   }
 
   int iv_len = EVP_CIPHER_iv_length(cipher);
-  if (RAND_bytes(iv, iv_len) != 1) {
+  if (RAND_bytes(iv, iv_len) != 1)
+  {
     return 0;
   }
   return 1;
 }
 
-const EVP_CIPHER *get_cipher(EncAlgo enc_algo, EncMode enc_mode) {
+const EVP_CIPHER *get_cipher(EncAlgo enc_algo, EncMode enc_mode)
+{
   EVP_CIPHER *cipher = NULL;
   char cipher_name[50];
 
   const char *algo_name = algo_to_string(enc_algo);
   const char *mode_name = mode_to_string(enc_mode);
 
-  if (algo_name == NULL) {
+  if (algo_name == NULL)
+  {
     return NULL;
   }
   snprintf(cipher_name, sizeof(cipher_name), "%s-%s", algo_name, mode_name);
@@ -85,8 +94,10 @@ const EVP_CIPHER *get_cipher(EncAlgo enc_algo, EncMode enc_mode) {
   return cipher;
 }
 
-const char *algo_to_string(EncAlgo enc_algo) {
-  switch (enc_algo) {
+const char *algo_to_string(EncAlgo enc_algo)
+{
+  switch (enc_algo)
+  {
   case AES128:
     return "AES-128";
   case AES192:
@@ -100,8 +111,10 @@ const char *algo_to_string(EncAlgo enc_algo) {
   }
 }
 
-const char *mode_to_string(EncMode enc_mode) {
-  switch (enc_mode) {
+const char *mode_to_string(EncMode enc_mode)
+{
+  switch (enc_mode)
+  {
   case ECB:
     return "ECB";
   case CFB:
@@ -109,7 +122,8 @@ const char *mode_to_string(EncMode enc_mode) {
   case OFB:
     return "OFB";
   case CBC:
+    return "CBC";
   default:
-    return "CBC"; // Default to CBC if mode is not specified
+    return NULL; // Unsupported encryption algorithm
   }
 }
