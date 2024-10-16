@@ -41,7 +41,7 @@ char* get_file_extension(const char *filename);
 
 unsigned char* read_file_data(const char *filename, long *size);
 
-unsigned char* read_bmp(const char* filename, BMPHeader* header, long* bmp_size);
+unsigned char* read_bmp(const char* filename, BMPImage * image);
 
 int write_bmp_to_file(const char* filename, BMPImage* image);
 

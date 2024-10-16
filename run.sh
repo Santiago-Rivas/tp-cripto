@@ -1,5 +1,7 @@
 #!/bin/bash
 
+mkdir -p out
+
 make clean
 make
 
@@ -16,7 +18,7 @@ echo TEST 1
     -embed\
     -in "test/test_1.txt"\
     -p "img/ejemplo2024sinEnc/lado.bmp" \
-    -out "out.bmp"\
+    -out "out/out.bmp"\
     -pass "hola"\
     -steg "LSBI"
 
@@ -34,7 +36,7 @@ for algo in "${algos[@]}"; do
             -embed \
             -in "test/test_1.txt" \
             -p "img/ejemplo2024sinEnc/lado.bmp" \
-            -out "imagenmas1_${algo}_${mode}.bmp" \
+            -out "out/imagenmas1_${algo}_${mode}.bmp" \
             -pass "hola" \
             -steg "LSBI" \
             -a "$algo" \

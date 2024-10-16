@@ -23,7 +23,7 @@ typedef struct {
     const char *password;
 } State;
 
-int embed(State * state);
+int embed(State * state, CryptData * crypt_data, BMPImage * carrier);
 
 int extract(State *state);
 

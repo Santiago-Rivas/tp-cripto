@@ -46,8 +46,7 @@ unsigned char *read_file_data(const char *filename, long *size) {
   return data;
 }
 
-unsigned char *read_bmp(const char *filename, BMPHeader *header,
-                        long *bmp_size) {
+unsigned char *read_bmp(const char *filename, BMPImage * image) {
   FILE *file = fopen(filename, "rb");
   if (!file) {
     perror("Error opening file");
@@ -55,20 +54,20 @@ unsigned char *read_bmp(const char *filename, BMPHeader *header,
   }
 
   // Read the BMP header
-  fread(header, sizeof(BMPHeader), 1, file);
+  fread(&image->header, sizeof(BMPHeader), 1, file);
 
   // Check if the file is a BMP file
-  if (header->type != 0x4D42) {
+  if (image->header.type != 0x4D42) {
     fprintf(stderr, "Error: Not a BMP file\n");
     fclose(file);
     return NULL;
   }
 
   // Calculate the size of the pixel data
-  *bmp_size = header->size - header->offset;
+  image->image_size = image->header.size - image->header.offset;
 
   // Allocate memory for the pixel data
-  unsigned char *bmp_data = (unsigned char *)malloc(*bmp_size);
+  unsigned char *bmp_data = (unsigned char *)malloc(image->image_size);
   if (!bmp_data) {
     perror("Error allocating memory");
     fclose(file);
@@ -76,8 +75,8 @@ unsigned char *read_bmp(const char *filename, BMPHeader *header,
   }
 
   // Move to the pixel data
-  fseek(file, header->offset, SEEK_SET);
-  fread(bmp_data, 1, *bmp_size, file);
+  fseek(file, image->header.offset, SEEK_SET);
+  fread(bmp_data, 1, image->image_size, file);
   fclose(file);
 
   return bmp_data;

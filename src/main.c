@@ -47,15 +47,33 @@ int main(int argc, char *argv[]) {
   //   printf("No encryption applied.\n");
   // }
 
-  if (state.operation == EMBED) {
-    printf("EMBED\n");
-    return embed(&state);
-  } else if (state.operation == EXTRACT) {
-    printf("Extract.\n");
-    return extract(&state);
+  CryptData * crypt_data = NULL;
+  if (state.password != NULL) {
+    crypt_data = malloc(sizeof(CryptData));
+    get_crypt_data(crypt_data, state.password, state.enc_algo, state.enc_mode);
   }
 
-  return 0;
+  BMPImage image;
+  image.data = read_bmp(state.carrier_bmp, &image);
+  if (!image.data) {
+    fprintf(stderr, "Failed to open image.\n");
+    return 1;
+  }
+
+
+  int return_val = 0;
+  if (state.operation == EMBED) {
+    printf("EMBED\n");
+    return_val = embed(&state, crypt_data, &image);
+  } else if (state.operation == EXTRACT) {
+    printf("Extract.\n");
+    return_val = extract(&state);
+  }
+
+  free(image.data);
+  free_crypt_data(crypt_data);
+
+  return return_val;
 }
 
 void print_usage() {
@@ -151,7 +169,7 @@ EncMode get_enc_mode(char *enc_mode) {
   return INVALID_ENC_MODE;
 }
 
-int embed(State *state) {
+int embed(State *state, CryptData * crypt_data, BMPImage * carrier) {
   long file_size;
   unsigned char *file_data = read_file_data(state->input_file, &file_size);
   if (!file_data) {
@@ -162,14 +180,6 @@ int embed(State *state) {
   char *extension = get_file_extension(state->input_file);
   size_t ext_length = strlen(extension) + 1; // +1 for '\0'
 
-  BMPImage carrier;
-  carrier.data =
-      read_bmp(state->carrier_bmp, &carrier.header, &carrier.image_size);
-  if (!carrier.data) {
-    fprintf(stderr, "Failed to read file data.\n");
-    free(file_data);
-    return 1;
-  }
 
   // Prepare data to encrypt: size of real file || file data || extension
   size_t total_size = sizeof(long) + file_size +
@@ -177,7 +187,6 @@ int embed(State *state) {
   unsigned char *data_to_encrypt = malloc(total_size);
   if (!data_to_encrypt) {
     fprintf(stderr, "Memory allocation failed.\n");
-    free(carrier.data);
     free(file_data);
     return 1;
   }
@@ -190,18 +199,17 @@ int embed(State *state) {
 
   unsigned char *encrypted_data = NULL;
 
-  if (state->password != NULL) {
+  if (crypt_data != NULL) {
     long encrypted_data_len = 0;
-    if (!encrypt(data_to_encrypt, total_size, state->password, &encrypted_data,
-                 &encrypted_data_len, state->enc_algo, state->enc_mode)) {
+    if (!encrypt(crypt_data, data_to_encrypt, total_size, &encrypted_data, &encrypted_data_len)) {
       fprintf(stderr, "Encryption failed.\n");
-      free(carrier.data);
       free(data_to_encrypt);
       free(file_data);
       return 1;
     }
     data_to_embed_len = encrypted_data_len;
   }
+
   if (encrypted_data == NULL) {
     encrypted_data = data_to_encrypt;
     data_to_encrypt = NULL;
@@ -212,7 +220,6 @@ int embed(State *state) {
   if (!data_to_embed) {
     fprintf(stderr, "Memory allocation failed.\n");
     free(encrypted_data);
-    free(carrier.data);
     if (data_to_encrypt != NULL) {
       free(data_to_encrypt);
     }
@@ -223,10 +230,9 @@ int embed(State *state) {
   memcpy(data_to_embed, &data_to_embed_len, sizeof(long));
   memcpy(data_to_embed + sizeof(long), encrypted_data, data_to_embed_len);
 
-  if (carrier.image_size < total_embedded_len * 8) {
+  if (carrier->image_size < total_embedded_len * 8) {
     fprintf(stderr, "Carrier image is too small for message.\n");
     free(encrypted_data);
-    free(carrier.data);
     if (data_to_encrypt != NULL) {
       free(data_to_encrypt);
     }
@@ -236,9 +242,9 @@ int embed(State *state) {
   }
 
   BMPImage output;
-  output.header = carrier.header;
-  output.image_size = carrier.image_size;
-  output.data = malloc(carrier.image_size);
+  output.header = carrier->header;
+  output.image_size = carrier->image_size;
+  output.data = malloc(carrier->image_size);
 
   int i = 0;
   int j = 0;
@@ -247,7 +253,7 @@ int embed(State *state) {
     for (int k = 0; k < 8; k++, j++) {
       unsigned char last_bit =
           (byte >> k) & 0x01; // shift to current bit and get it
-      unsigned char in = carrier.data[j] & 0xFE; // Clear last bit
+      unsigned char in = carrier->data[j] & 0xFE; // Clear last bit
       unsigned char new =
           in | last_bit; // XOR with 0 and the last_bit = last_bit
       output.data[j] = new;
@@ -255,8 +261,8 @@ int embed(State *state) {
     i++;
   }
 
-  while (j < carrier.image_size) {
-    output.data[j] = carrier.data[j];
+  while (j < carrier->image_size) {
+    output.data[j] = carrier->data[j];
     j++;
   }
   // for (int i = 0; i < sizeof(long) + file_size + ext_length; i++) {
@@ -265,7 +271,6 @@ int embed(State *state) {
 
   if (!write_bmp_to_file(state->output_file, &output)) {
     fprintf(stderr, "Failed to write BMP to file\n");
-    free(carrier.data);
     free(output.data);
     if (data_to_encrypt != NULL) {
       free(data_to_encrypt);
@@ -275,8 +280,6 @@ int embed(State *state) {
     return 1;
   }
 
-  // Free allocated memory
-  free(carrier.data);
   free(output.data);
   free(data_to_embed);
   free(file_data);

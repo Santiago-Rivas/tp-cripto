@@ -1,5 +1,7 @@
 bin
 *.swp
+*.rar
 obj
+out
 
 .vscode
