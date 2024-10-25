@@ -291,6 +291,96 @@ int embed(State *state, CryptData * crypt_data, BMPImage * carrier) {
 }
 
 int extract(State *state) {
-  printf("NOT implemented");
-  return 1;
+  BMPImage image;
+  image.data = read_bmp(state->carrier_bmp, &image);
+  if (!image.data) {
+    fprintf(stderr, "Failed to open carrier image.\n");
+    return 1;
+  }
+
+  // Step 1: Extract the length of the embedded data
+  long data_len = 0;
+  int j = 0;
+
+  for (int i = 0; i < sizeof(long); i++) {
+    unsigned char byte = 0;
+    for (int k = 0; k < 8; k++, j++) {
+      unsigned char bit = (image.data[j] & 0x01);  // Get the LSB of each byte
+      byte |= (bit << k);
+    }
+    ((unsigned char*)&data_len)[i] = byte;
+  }
+
+  // Step 2: Allocate memory for the extracted data
+  unsigned char *extracted_data = malloc(data_len);
+  if (!extracted_data) {
+    fprintf(stderr, "Memory allocation failed.\n");
+    free(image.data);
+    return 1;
+  }
+
+  // Step 3: Extract the embedded data
+  for (long i = 0; i < data_len; i++) {
+    unsigned char byte = 0;
+    for (int k = 0; k < 8; k++, j++) {
+      unsigned char bit = (image.data[j] & 0x01);
+      byte |= (bit << k);
+    }
+    extracted_data[i] = byte;
+  }
+
+  // Step 4: Decrypt the data if needed
+  unsigned char *decrypted_data = NULL;
+  long decrypted_data_len = data_len;
+
+  if (state->password != NULL) {
+    CryptData *crypt_data = malloc(sizeof(CryptData));
+    if (!crypt_data) {
+      fprintf(stderr, "Memory allocation failed.\n");
+      free(extracted_data);
+      free(image.data);
+      return 1;
+    }
+    get_crypt_data(crypt_data, state->password, state->enc_algo, state->enc_mode);
+
+    if (!decrypt(crypt_data, extracted_data, data_len, &decrypted_data, &decrypted_data_len)) {
+      fprintf(stderr, "Decryption failed.\n");
+      free_crypt_data(crypt_data);
+      free(extracted_data);
+      free(image.data);
+      return 1;
+    }
+    free_crypt_data(crypt_data);
+  } else {
+    decrypted_data = extracted_data; // No decryption
+  }
+
+  // Step 5: Retrieve the original file size and extension
+  long file_size = 0;
+  memcpy(&file_size, decrypted_data, sizeof(long));
+  char *extension = (char *)(decrypted_data + sizeof(long) + file_size);
+
+  // Step 6: Write the extracted file to the output
+  FILE *output_file = fopen(state->output_file, "wb");
+  if (!output_file) {
+    fprintf(stderr, "Failed to open output file.\n");
+    if (state->password != NULL) {
+        free(decrypted_data);
+    }
+    free(extracted_data);
+    free(image.data);
+    return 1;
+  }
+
+  fwrite(decrypted_data + sizeof(long), 1, file_size, output_file);
+  fclose(output_file);
+
+  // Clean up
+  if (state->password != NULL) {
+    free(decrypted_data);
+  }
+  free(extracted_data);
+  free(image.data);
+
+  return 0;
 }
