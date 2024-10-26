@@ -22,6 +22,14 @@ echo TEST 1
     -pass "hola"\
     -steg "LSBI"
 
+./bin/stegobmp\
+    -extract\
+    -p "img/ejemplo2024sinEnc/lado.bmp" \
+    -out "out/mensaje_ext.txt"\
+    -pass "hola"\
+    -steg "LSBI"
+
+exit
 # echo TEST 2
 # ./bin/stegobmp -extract -p "imagenmas1.bmp" -out "mensaje1" -steg LSBI -a 3des -m cbc -pass "oculto"
 

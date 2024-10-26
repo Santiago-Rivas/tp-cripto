@@ -25,7 +25,7 @@ typedef struct {
 
 int embed(State * state, CryptData * crypt_data, BMPImage * carrier);
 
-int extract(State *state);
+int extract(State * state, CryptData * crypt_data, BMPImage * carrier);
 
 void print_usage();
 

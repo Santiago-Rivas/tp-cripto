@@ -29,8 +29,13 @@ const EVP_CIPHER *get_cipher(EncAlgo enc_algo, EncMode enc_mode);
 int get_crypt_data(CryptData *crypt_data, const char *password,
                    EncAlgo enc_algo, EncMode enc_mode);
 
-void free_crypt_data(CryptData * crypt_data);
+void free_crypt_data(CryptData *crypt_data);
+
 int encrypt(CryptData *crypt_data, unsigned char *plaintext, long plaintext_len,
             unsigned char **ciphertext, long *ciphertext_len);
+
+int decrypt(CryptData *crypt_data, unsigned char **plaintext,
+            long *plaintext_len, unsigned char *ciphertext,
+            long ciphertext_len);
 
 #endif // ENCRYPTION_H

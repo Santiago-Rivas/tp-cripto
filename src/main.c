@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
     return_val = embed(&state, crypt_data, &image);
   } else if (state.operation == EXTRACT) {
     printf("Extract.\n");
-    return_val = extract(&state);
+    return_val = extract(&state, crypt_data, &image);
   }
 
   free(image.data);
@@ -241,6 +241,8 @@ int embed(State *state, CryptData * crypt_data, BMPImage * carrier) {
     return 1;
   }
 
+  printf("Extracted unsigned long: %lu\n", data_to_embed_len);
+
   BMPImage output;
   output.header = carrier->header;
   output.image_size = carrier->image_size;
@@ -290,7 +292,21 @@ int embed(State *state, CryptData * crypt_data, BMPImage * carrier) {
   return 0;
 }
 
-int extract(State *state) {
-  printf("NOT implemented");
-  return 1;
+int extract(State *state, CryptData * crypt_data, BMPImage * carrier) {
+    unsigned long extracted_value = 0;  // Use unsigned long to avoid signed shift issues
+
+    // Assuming long is 8 bytes (64 bits)
+    for (int i = 0; i < sizeof(unsigned long) * 8; i++) {
+        // Extract the LSB of the current byte in the carrier data
+        unsigned char byte = carrier->data[i];
+        unsigned char last_bit = byte & 0x01; // LSB extraction
+
+        // Shift the bit into the correct position in the extracted value
+        extracted_value |= (unsigned long)last_bit << i;
+    }
+
+    // Now you have the reconstructed unsigned long value
+    printf("Extracted unsigned long: %lu\n", extracted_value);
+
+    return 1;
 }

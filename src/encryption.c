@@ -6,10 +6,6 @@ const char *mode_to_string(EncMode enc_mode);
 int encrypt(CryptData * crypt_data, unsigned char *plaintext, long plaintext_len, unsigned char **ciphertext, long *ciphertext_len) {
 
   const EVP_CIPHER *cipher = crypt_data->cipher;
-  if (!cipher) {
-    printf("Error: Invalid cipher algorithm or mode.\n");
-    return 0;
-  }
 
   EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
   EVP_EncryptInit_ex2(ctx, cipher, crypt_data->key_iv_pair, crypt_data->key_iv_pair + crypt_data->keylen, NULL);
@@ -18,8 +14,7 @@ int encrypt(CryptData * crypt_data, unsigned char *plaintext, long plaintext_len
       (unsigned char *)malloc(plaintext_len + EVP_CIPHER_block_size(cipher));
   int len;
   int ciphertext_size;
-  if (EVP_EncryptUpdate(ctx, *ciphertext, &len, plaintext, plaintext_len) !=
-      1) {
+  if (EVP_EncryptUpdate(ctx, *ciphertext, &len, plaintext, plaintext_len) != 1) {
     printf("Error: EVP_EncryptUpdate.\n");
     return 0;
   }
@@ -33,6 +28,35 @@ int encrypt(CryptData * crypt_data, unsigned char *plaintext, long plaintext_len
   ciphertext_size += len;
 
   *ciphertext_len = ciphertext_size;
+
+  EVP_CIPHER_CTX_free(ctx);
+  return 1;
+}
+
+int decrypt(CryptData * crypt_data, unsigned char **plaintext, long *plaintext_len, unsigned char *ciphertext, long ciphertext_len) {
+
+  const EVP_CIPHER *cipher = crypt_data->cipher;
+
+  EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+  EVP_DecryptInit_ex2(ctx, cipher, crypt_data->key_iv_pair, crypt_data->key_iv_pair + crypt_data->keylen, NULL);
+
+  *plaintext = (unsigned char *)malloc(ciphertext_len);
+  int len;
+  int plaintext_size;
+  if (EVP_DecryptUpdate(ctx, *plaintext, &len, ciphertext, ciphertext_len) != 1) {
+    printf("Error: EVP_EncryptUpdate.\n");
+    return 0;
+  }
+
+  plaintext_size = len;
+
+  if (EVP_DecryptFinal_ex(ctx, *plaintext + len, &len) != 1) {
+    printf("Error: EVP_EncryptFinal_ex.\n");
+    return 0;
+  }
+  plaintext_size += len;
+
+  *plaintext_len = plaintext_size;
 
   EVP_CIPHER_CTX_free(ctx);
   return 1;
