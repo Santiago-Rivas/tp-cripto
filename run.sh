@@ -19,15 +19,13 @@ echo TEST 1
     -in "test/test_1.txt"\
     -p "img/ejemplo2024sinEnc/lado.bmp" \
     -out "out/out.bmp"\
-    -pass "hola"\
-    -steg "LSBI"
+    -steg "LSB1"
 
 ./bin/stegobmp\
     -extract\
-    -p "img/ejemplo2024sinEnc/lado.bmp" \
+    -p "out/out.bmp" \
     -out "out/mensaje_ext.txt"\
-    -pass "hola"\
-    -steg "LSBI"
+    -steg "LSB1"
 
 exit
 # echo TEST 2

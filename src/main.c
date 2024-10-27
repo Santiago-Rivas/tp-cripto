@@ -1,312 +1,201 @@
-#include "main.h"
+#include "params.h"
+#include "lsb.h"
+
+typedef uint32_t embed_size_t;
+
+int embed(Params *params, CryptData * crypt_data, BMPImage * carrier);
+
+int extract(Params *params, CryptData * crypt_data, BMPImage * carrier);
 
 int main(int argc, char *argv[]) {
-  if (argc < 6) {
-    printf("Error: Insufficient arguments provided.\n");
-    print_usage();
-    return 1;
-  }
-
-  State state = {INVALID_OP,      NULL,   NULL, NULL,
-                 EMPTY_STEG_ALGO, AES128, CBC,  NULL};
-
-  state.operation = get_operation(argv[1]);
-
-  if (state.operation == INVALID_OP) {
-    printf("Error: First argument must be -embed or -extract.\n");
-    print_usage();
-    return 1;
-  }
-
-  if (!read_params(&state, argc, argv)) {
-    print_usage();
-    return 1;
-  }
-
-
-  if (state.steg_algo == EMPTY_STEG_ALGO) {
-    printf("Error: Steganography algorithm must be provided.\n");
-    return 1;
-  } else if (state.steg_algo == INVALID_STEG_ALGO) {
-    printf(
-        "Error: Invalid steganography algorithm. Use LSB1, LSB4, or LSBI.\n");
-    return 1;
-  }
-
-  // printf("Mode: %s\n", state.operation == EMBED ? "Embed" : "Extract");
-  // printf("Input file: %s\n",
-  //        state.input_file ? state.input_file : "Not provided");
-  // printf("Carrier BMP: %s\n",
-  //        state.carrier_bmp ? state.carrier_bmp : "Not provided");
-  // printf("Output file: %s\n",
-  //        state.output_file ? state.output_file : "Not provided");
-
-  // if (state.password != NULL) {
-  //   printf("Encryption with password '%s'\n", state.password);
-  // } else {
-  //   printf("No encryption applied.\n");
-  // }
-
-  CryptData * crypt_data = NULL;
-  if (state.password != NULL) {
-    crypt_data = malloc(sizeof(CryptData));
-    get_crypt_data(crypt_data, state.password, state.enc_algo, state.enc_mode);
-  }
-
-  BMPImage image;
-  image.data = read_bmp(state.carrier_bmp, &image);
-  if (!image.data) {
-    fprintf(stderr, "Failed to open image.\n");
-    return 1;
-  }
-
-
-  int return_val = 0;
-  if (state.operation == EMBED) {
-    printf("EMBED\n");
-    return_val = embed(&state, crypt_data, &image);
-  } else if (state.operation == EXTRACT) {
-    printf("Extract.\n");
-    return_val = extract(&state, crypt_data, &image);
-  }
-
-  free(image.data);
-  free_crypt_data(crypt_data);
-
-  return return_val;
-}
-
-void print_usage() {
-  printf("Usage:\n");
-  printf("To embed data:\n");
-  printf("$ stegobmp -embed -in <file> -p <bitmapfile> -out <bitmapfile> -steg "
-         "<LSB1|LSB4|LSBI> [-a <aes128|aes192|aes256|3des>] [-m "
-         "<ecb|cfb|ofb|cbc>] [-pass <password>]\n");
-  printf("To extract data:\n");
-  printf("$ stegobmp -extract -p <bitmapfile> -out <file> -steg "
-         "<LSB1|LSB4|LSBI> [-a <aes128|aes192|aes256|3des>] [-m "
-         "<ecb|cfb|ofb|cbc>] [-pass <password>]\n");
-}
-
-Operation get_operation(char *operation) {
-  if (strcmp(operation, "-embed") == 0) {
-    return EMBED;
-  } else if (strcmp(operation, "-extract") == 0) {
-    return EXTRACT;
-  }
-  return INVALID_OP;
-}
-
-int read_params(State *state, int argc, char *argv[]) {
-  for (int i = 2; i < argc; i++) {
-    if (strcmp(argv[i], "-in") == 0 && i + 1 < argc) {
-      state->input_file = argv[++i];
-    } else if (strcmp(argv[i], "-p") == 0 && i + 1 < argc) {
-      state->carrier_bmp = argv[++i];
-    } else if (strcmp(argv[i], "-out") == 0 && i + 1 < argc) {
-      state->output_file = argv[++i];
-    } else if (strcmp(argv[i], "-steg") == 0 && i + 1 < argc) {
-      state->steg_algo = get_steg_algo(argv[++i]);
-    } else if (strcmp(argv[i], "-a") == 0 && i + 1 < argc) {
-      state->enc_algo = get_enc_algo(argv[++i]);
-    } else if (strcmp(argv[i], "-m") == 0 && i + 1 < argc) {
-      state->enc_mode = get_enc_mode(argv[++i]);
-    } else if (strcmp(argv[i], "-pass") == 0 && i + 1 < argc) {
-      state->password = argv[++i];
-    } else {
-      printf("Error: Invalid argument %s\n", argv[i]);
-      return 0;
+    if (argc < 6) {
+        fprintf(stderr, "Error: Insufficient arguments provided.\n");
+        print_usage();
+        return 1;
     }
-  }
-  return 1;
+
+    Params params = {
+        .operation = INVALID_OP,
+        .input_file = NULL,
+        .carrier_bmp = NULL,
+        .output_file = NULL,
+        .steg_algo = EMPTY_STEG_ALGO,
+        .enc_algo = AES128,
+        .enc_mode = CBC,
+        .password = NULL
+    };
+
+    params.operation = get_operation(argv[1]);
+
+    if (params.operation == INVALID_OP) {
+        fprintf(stderr, "Error: First argument must be -embed or -extract.\n");
+        print_usage();
+        return 1;
+    }
+
+    if (read_params(&params, argc, argv)) {
+        print_usage();
+        return 1;
+    }
+
+
+    if (params.steg_algo == EMPTY_STEG_ALGO) {
+        fprintf(stderr, "Error: Steganography algorithm must be provided.\n");
+        return 1;
+    } else if (params.steg_algo == INVALID_STEG_ALGO) {
+        fprintf(stderr, "Error: Invalid steganography algorithm. Use LSB1, LSB4, or LSBI.\n");
+        return 1;
+    }
+
+    // printf("Mode: %s\n", params.operation == EMBED ? "Embed" : "Extract");
+    // printf("Input file: %s\n",
+    //        params.input_file ? params.input_file : "Not provided");
+    // printf("Carrier BMP: %s\n",
+    //        params.carrier_bmp ? params.carrier_bmp : "Not provided");
+    // printf("Output file: %s\n",
+    //        params.output_file ? params.output_file : "Not provided");
+
+    // if (params.password != NULL) {
+    //   printf("Encryption with password '%s'\n", params.password);
+    // } else {
+    //   printf("No encryption applied.\n");
+    // }
+
+    CryptData * crypt_data = NULL;
+    if (params.password != NULL) {
+        crypt_data = malloc(sizeof(CryptData));
+        get_crypt_data(crypt_data, params.password, params.enc_algo, params.enc_mode);
+    }
+
+    BMPImage *image = bmp_read(params.carrier_bmp);
+    if (image == NULL) {
+        fprintf(stderr, "Failed to open image.\n");
+        return 1;
+    }
+
+
+    int return_val = 0;
+    if (params.operation == EMBED) {
+        fprintf(stderr, "EMBED\n");
+        return_val = embed(&params, crypt_data, image);
+    } else if (params.operation == EXTRACT) {
+        fprintf(stderr, "EXTRACT\n");
+        return_val = extract(&params, crypt_data, image);
+    }
+
+    free(image);
+    free_crypt_data(crypt_data);
+
+    return return_val;
 }
 
-StegAlgo get_steg_algo(char *steg_algo) {
-  if (steg_algo == NULL) {
-    return INVALID_STEG_ALGO;
-  }
-  if (strcmp(steg_algo, "LSB1") != 0) {
-    return LSB1;
-  }
-  if (strcmp(steg_algo, "LSB4") != 0) {
-    return LSB4;
-  }
-  if (strcmp(steg_algo, "LSBI") != 0) {
-    return LSBI;
-  }
-  return INVALID_STEG_ALGO;
-}
+int embed(Params *params, CryptData * crypt_data, BMPImage * carrier) {
+    long file_size;
+    unsigned char *file_data = read_file_data(params->input_file, &file_size);
+    if (file_data == NULL) {
+        fprintf(stderr, "Failed to read file data.\n");
+        return 1;
+    }
 
-EncAlgo get_enc_algo(char *enc_algo) {
-  if (enc_algo == NULL || strcmp(enc_algo, "aes128") != 0) {
-    return AES128;
-  }
-  if (strcmp(enc_algo, "aes192") != 0) {
-    return AES192;
-  }
-  if (strcmp(enc_algo, "aes256") != 0) {
-    return AES256;
-  }
-  if (strcmp(enc_algo, "3des") != 0) {
-    return DES3;
-  }
-  return INVALID_ENC_ALGO;
-}
-
-EncMode get_enc_mode(char *enc_mode) {
-  if (enc_mode == NULL || strcmp(enc_mode, "cbc") != 0) {
-    return CBC;
-  }
-  if (strcmp(enc_mode, "cfb") != 0) {
-    return CFB;
-  }
-  if (strcmp(enc_mode, "ofb") != 0) {
-    return OFB;
-  }
-  if (strcmp(enc_mode, "ecb") != 0) {
-    return ECB;
-  }
-  return INVALID_ENC_MODE;
-}
-
-int embed(State *state, CryptData * crypt_data, BMPImage * carrier) {
-  long file_size;
-  unsigned char *file_data = read_file_data(state->input_file, &file_size);
-  if (!file_data) {
-    fprintf(stderr, "Failed to read file data.\n");
-    return 1;
-  }
-
-  char *extension = get_file_extension(state->input_file);
-  size_t ext_length = strlen(extension) + 1; // +1 for '\0'
+    char *extension = get_file_extension(params->input_file);
+    size_t ext_length = strlen(extension) + 1; // +1 for '\0'
 
 
-  // Prepare data to encrypt: size of real file || file data || extension
-  size_t total_size = sizeof(long) + file_size +
-                      ext_length; // 4 bytes for size + file data + extension
-  unsigned char *data_to_encrypt = malloc(total_size);
-  if (!data_to_encrypt) {
-    fprintf(stderr, "Memory allocation failed.\n");
-    free(file_data);
-    return 1;
-  }
-
-  memcpy(data_to_encrypt, &file_size, sizeof(long));
-  memcpy(data_to_encrypt + sizeof(long), file_data, file_size);
-  memcpy(data_to_encrypt + sizeof(long) + file_size, extension, ext_length);
-
-  long data_to_embed_len = file_size;
-
-  unsigned char *encrypted_data = NULL;
-
-  if (crypt_data != NULL) {
-    long encrypted_data_len = 0;
-    if (!encrypt(crypt_data, data_to_encrypt, total_size, &encrypted_data, &encrypted_data_len)) {
-      fprintf(stderr, "Encryption failed.\n");
-      free(data_to_encrypt);
+    // Prepare data to encrypt: size of real file || file data || extension
+  /*   size_t total_size = sizeof(embed_size_t) + file_size + ext_length; // bytes for size + file data + extension
+    unsigned char *data_to_encrypt = malloc(total_size);
+    if (!data_to_encrypt) {
+      fprintf(stderr, "Memory allocation failed.\n");
       free(file_data);
       return 1;
     }
-    data_to_embed_len = encrypted_data_len;
-  }
 
-  if (encrypted_data == NULL) {
-    encrypted_data = data_to_encrypt;
-    data_to_encrypt = NULL;
-  }
+    memcpy(data_to_encrypt, &file_size, sizeof(embed_size_t));
+    memcpy(data_to_encrypt + sizeof(embed_size_t), file_data, file_size);
+    memcpy(data_to_encrypt + sizeof(embed_size_t) + file_size, extension, ext_length);
 
-  size_t total_embedded_len = sizeof(long) + data_to_embed_len;
-  unsigned char *data_to_embed = malloc(total_embedded_len);
-  if (!data_to_embed) {
-    fprintf(stderr, "Memory allocation failed.\n");
-    free(encrypted_data);
-    if (data_to_encrypt != NULL) {
-      free(data_to_encrypt);
+    long data_to_embed_len = file_size;
+
+    unsigned char *encrypted_data = NULL;
+
+    if (crypt_data != NULL) {
+      long encrypted_data_len = 0;
+      if (!encrypt(crypt_data, data_to_encrypt, total_size, &encrypted_data, &encrypted_data_len)) {
+        fprintf(stderr, "Encryption failed.\n");
+        free(data_to_encrypt);
+        free(file_data);
+        return 1;
+      }
+      data_to_embed_len = encrypted_data_len;
     }
+
+    if (encrypted_data == NULL) {
+      encrypted_data = data_to_encrypt;
+      data_to_encrypt = NULL;
+    }
+
+    size_t total_embedded_len = sizeof(embed_size_t) + data_to_embed_len;
+    unsigned char *data_to_embed = malloc(total_embedded_len);
+    if (!data_to_embed) {
+      fprintf(stderr, "Memory allocation failed.\n");
+      free(encrypted_data);
+      if (data_to_encrypt != NULL) {
+        free(data_to_encrypt);
+      }
+      free(file_data);
+      return 1;
+    }
+
+    memcpy(data_to_embed, &data_to_embed_len, sizeof(embed_size_t));
+    memcpy(data_to_embed + sizeof(embed_size_t), encrypted_data, data_to_embed_len);
+
+    */
+
+    BMPImage *output = bmp_clone(carrier);
+    size_t embed_size = 0;
+    embed_size += lsb1_embed((uint8_t*)&file_size, sizeof(embed_size_t), output->data, output->image_size);
+    embed_size += lsb1_embed(file_data, file_size, output->data + embed_size, output->image_size - embed_size);
+    embed_size += lsb1_embed((uint8_t*)extension, ext_length, output->data + embed_size, output->image_size - embed_size);
+
+    printf("Embedding file size: %lu\n", file_size);
+    printf("Embedding file data: %s\n", file_data);
+    printf("Embedding extension: %s\n", extension);
+    printf("Embedding total size: %lu\n", embed_size);
+
+    if (bmp_write(params->output_file, output)) {
+        fprintf(stderr, "Failed to write BMP to file\n");
+        free(output);
+        free(file_data);
+        return 1;
+    }
+
+    free(output);
     free(file_data);
-    return 1;
-  }
-
-  memcpy(data_to_embed, &data_to_embed_len, sizeof(long));
-  memcpy(data_to_embed + sizeof(long), encrypted_data, data_to_embed_len);
-
-  if (carrier->image_size < total_embedded_len * 8) {
-    fprintf(stderr, "Carrier image is too small for message.\n");
-    free(encrypted_data);
-    if (data_to_encrypt != NULL) {
-      free(data_to_encrypt);
-    }
-    free(file_data);
-    free(data_to_embed);
-    return 1;
-  }
-
-  printf("Extracted unsigned long: %lu\n", data_to_embed_len);
-
-  BMPImage output;
-  output.header = carrier->header;
-  output.image_size = carrier->image_size;
-  output.data = malloc(carrier->image_size);
-
-  int i = 0;
-  int j = 0;
-  while (i < total_embedded_len) {
-    unsigned char byte = data_to_embed[i];
-    for (int k = 0; k < 8; k++, j++) {
-      unsigned char last_bit =
-          (byte >> k) & 0x01; // shift to current bit and get it
-      unsigned char in = carrier->data[j] & 0xFE; // Clear last bit
-      unsigned char new =
-          in | last_bit; // XOR with 0 and the last_bit = last_bit
-      output.data[j] = new;
-    }
-    i++;
-  }
-
-  while (j < carrier->image_size) {
-    output.data[j] = carrier->data[j];
-    j++;
-  }
-  // for (int i = 0; i < sizeof(long) + file_size + ext_length; i++) {
-  //   printf("DATA TO Embed: %c\n", data_to_embed[i]);
-  // }
-
-  if (!write_bmp_to_file(state->output_file, &output)) {
-    fprintf(stderr, "Failed to write BMP to file\n");
-    free(output.data);
-    if (data_to_encrypt != NULL) {
-      free(data_to_encrypt);
-    }
-    free(data_to_embed);
-    free(file_data);
-    return 1;
-  }
-
-  free(output.data);
-  free(data_to_embed);
-  free(file_data);
-  free(encrypted_data);
-  if (data_to_encrypt != NULL) {
-    free(data_to_encrypt);
-  }
-  return 0;
+    return 0;
 }
 
-int extract(State *state, CryptData * crypt_data, BMPImage * carrier) {
-    unsigned long extracted_value = 0;  // Use unsigned long to avoid signed shift issues
+int extract(Params *params, CryptData * crypt_data, BMPImage * carrier) {
+    embed_size_t size = 0;
 
-    // Assuming long is 8 bytes (64 bits)
-    for (int i = 0; i < sizeof(unsigned long) * 8; i++) {
-        // Extract the LSB of the current byte in the carrier data
-        unsigned char byte = carrier->data[i];
-        unsigned char last_bit = byte & 0x01; // LSB extraction
+    size_t embed_size = 0;
+    embed_size += lsb1_extract((uint8_t *)&size, sizeof(embed_size_t), carrier->data, carrier->image_size);
 
-        // Shift the bit into the correct position in the extracted value
-        extracted_value |= (unsigned long)last_bit << i;
+    uint8_t* buffer = malloc(size + 1);
+    if (buffer == NULL) {
+        return -1;
     }
 
-    // Now you have the reconstructed unsigned long value
-    printf("Extracted unsigned long: %lu\n", extracted_value);
+    embed_size += lsb1_extract(buffer, size, carrier->data + embed_size, carrier->image_size - embed_size);
+    buffer[size] = '\0';
 
-    return 1;
+    uint8_t extension[256] = {0};
+    embed_size += lsb1_extract(extension, 0, carrier->data + embed_size, carrier->image_size - embed_size);
+
+    printf("Extracted file size: %u\n", size);
+    printf("Extracted file data: %s\n", buffer);
+    printf("Extracted extension: %s\n", extension);
+    printf("Extracted total size: %lu\n", embed_size);
+
+    free(buffer);
+    return 0;
 }
