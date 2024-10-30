@@ -21,6 +21,12 @@ echo TEST 1
     -out "out/out.bmp"\
     -steg "LSB1"
 
+# ./bin/stegobmp\
+#     -extract\
+#     -p "img/ejemplo2024sinEnc/ladoLSB1.bmp"\
+#     -out "out/mensaje_ext.txt"\
+#     -steg "LSB1"
+
 ./bin/stegobmp\
     -extract\
     -p "out/out.bmp" \
