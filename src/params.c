@@ -62,32 +62,32 @@ StegAlgo get_steg_algo(const char *steg_algo) {
 }
 
 EncAlgo get_enc_algo(const char *enc_algo) {
-    if (enc_algo == NULL || strcmp(enc_algo, "aes128") != 0) {
+    if (enc_algo == NULL || strcmp(enc_algo, "aes128") == 0) {
         return AES128;
     }
-    if (strcmp(enc_algo, "aes192") != 0) {
+    if (strcmp(enc_algo, "aes192") == 0) {
         return AES192;
     }
-    if (strcmp(enc_algo, "aes256") != 0) {
+    if (strcmp(enc_algo, "aes256") == 0) {
         return AES256;
     }
-    if (strcmp(enc_algo, "3des") != 0) {
+    if (strcmp(enc_algo, "3des") == 0) {
         return DES3;
     }
     return INVALID_ENC_ALGO;
 }
 
 EncMode get_enc_mode(const char *enc_mode) {
-    if (enc_mode == NULL || strcmp(enc_mode, "cbc") != 0) {
+    if (enc_mode == NULL || strcmp(enc_mode, "cbc") == 0) {
         return CBC;
     }
-    if (strcmp(enc_mode, "cfb") != 0) {
+    if (strcmp(enc_mode, "cfb") == 0) {
         return CFB;
     }
-    if (strcmp(enc_mode, "ofb") != 0) {
+    if (strcmp(enc_mode, "ofb") == 0) {
         return OFB;
     }
-    if (strcmp(enc_mode, "ecb") != 0) {
+    if (strcmp(enc_mode, "ecb") == 0) {
         return ECB;
     }
     return INVALID_ENC_MODE;

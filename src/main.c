@@ -1,5 +1,6 @@
 #include "lsb.h"
 #include "params.h"
+#include <string.h>
 
 typedef uint32_t embed_size_t;
 
@@ -63,6 +64,7 @@ int main(int argc, char *argv[]) {
   CryptData *crypt_data = NULL;
   if (params.password != NULL) {
     crypt_data = malloc(sizeof(CryptData));
+
     get_crypt_data(crypt_data, params.password, params.enc_algo,
                    params.enc_mode);
   }
@@ -108,15 +110,13 @@ int embed(Params *params, CryptData *crypt_data, BMPImage *carrier) {
   uint32_t file_size_be = htobe32(file_size);
   printf("FILE SIZE = %u\n", file_size_be);
 
-  embed_size += lsb1_embed((uint8_t *)&file_size_be, sizeof(uint32_t), output->data, output->image_size);
-  printf("Embed size after file size: %zu\n", embed_size);
-
-  embed_size += lsb1_embed(file_data, file_size, output->data + embed_size, output->image_size - embed_size);
-  printf("Embed size after file data: %zu\n", embed_size);
-
+  embed_size += lsb1_embed((uint8_t *)&file_size_be, sizeof(uint32_t),
+                           output->data, output->image_size);
+  embed_size += lsb1_embed(file_data, file_size, output->data + embed_size,
+                           output->image_size - embed_size);
   embed_size +=
-      lsb1_embed((uint8_t *)extension, ext_length, output->data + embed_size, output->image_size - embed_size);
-  printf("Embed size after extension: %zu\n", embed_size);
+      lsb1_embed((uint8_t *)extension, ext_length, output->data + embed_size,
+                 output->image_size - embed_size);
 
   // printf("Embedding file size: %lu\n", file_size);
   // printf("Embedding file data: %s\n", file_data);
@@ -135,156 +135,49 @@ int embed(Params *params, CryptData *crypt_data, BMPImage *carrier) {
   return 0;
 }
 
-/*
-int embed(Params *params, CryptData *crypt_data, BMPImage *carrier) {
-  long file_size;
-  unsigned char *file_data = read_file_data(params->input_file, &file_size);
-  if (file_data == NULL) {
-    fprintf(stderr, "Failed to read file data.\n");
-    return 1;
-  }
-
-  char *extension = get_file_extension(params->input_file);
-  size_t ext_length = strlen(extension) + 1; // +1 for '\0'
-
-  // Prepare data to encrypt: size of real file || file data || extension
-  size_t total_size = sizeof(long) + file_size +
-                      ext_length; // 4 bytes for size + file data + extension
-  unsigned char *data_to_encrypt = malloc(total_size);
-  if (!data_to_encrypt) {
-    fprintf(stderr, "Memory allocation failed.\n");
-    free(file_data);
-    return 1;
-  }
-
-  long file_size_be = htobe32(file_size);
-  memcpy(data_to_encrypt, &file_size_be, sizeof(embed_size_t));
-  memcpy(data_to_encrypt + sizeof(embed_size_t), file_data, file_size);
-  memcpy(data_to_encrypt + sizeof(embed_size_t) + file_size, extension,
-         ext_length);
-
-  long data_to_embed_len = file_size;
-
-  unsigned char *encrypted_data = NULL;
-
-  if (crypt_data != NULL) {
-    long encrypted_data_len = 0;
-    if (!encrypt(crypt_data, data_to_encrypt, total_size, &encrypted_data,
-                 &encrypted_data_len)) {
-      fprintf(stderr, "Encryption failed.\n");
-      free(data_to_encrypt);
-      free(file_data);
-      return 1;
-    }
-    data_to_embed_len = encrypted_data_len;
-  }
-
-  if (encrypted_data == NULL) {
-    encrypted_data = data_to_encrypt;
-    data_to_encrypt = NULL;
-  }
-
-  size_t total_embedded_len = sizeof(embed_size_t) + data_to_embed_len;
-  unsigned char *data_to_embed = malloc(total_embedded_len);
-  if (!data_to_embed) {
-    fprintf(stderr, "Memory allocation failed.\n");
-    free(encrypted_data);
-    if (data_to_encrypt != NULL) {
-      free(data_to_encrypt);
-    }
-    free(file_data);
-    return 1;
-  }
-
-
-  data_to_embed = data_to_encrypt;
-  total_embedded_len = sizeof(embed_size_t) + file_size + ext_length;
-  long data_to_embed_len_be = htobe32(data_to_embed_len);
-  // memcpy(data_to_embed, &data_to_embed_len_be, sizeof(embed_size_t));
-  // memcpy(data_to_embed + sizeof(embed_size_t), encrypted_data,
-         // data_to_embed_len);
-
-  BMPImage *output = bmp_clone(carrier);
-  size_t embed_size = 0;
-  // embed_size += lsb1_embed((uint8_t*)&file_size, sizeof(embed_size_t),
-  // output->data, output->image_size); embed_size += lsb1_embed(file_data,
-  // file_size, output->data + embed_size, output->image_size - embed_size);
-  // embed_size += lsb1_embed((uint8_t*)extension, ext_length, output->data +
-  // embed_size, output->image_size - embed_size);
-  embed_size += lsb1_embed(data_to_embed, total_embedded_len, output->data,
-                           output->image_size - embed_size);
-
-  // printf("Embedding file size: %lu\n", file_size);
-  // printf("Embedding file data: %s\n", file_data);
-  // printf("Embedding extension: %s\n", extension);
-  // printf("Embedding total size: %lu\n", embed_size);
-
-  if (bmp_write(params->output_file, output)) {
-    fprintf(stderr, "Failed to write BMP to file\n");
-    free(output);
-    free(file_data);
-    return 1;
-  }
-
-  free(output);
-  free(file_data);
-  free(data_to_embed);
-  free(data_to_encrypt);
-  free(encrypted_data);
-  return 0;
-}
-*/
-
 int extract(Params *params, CryptData *crypt_data, BMPImage *carrier) {
-  embed_size_t size = 0;
-
+  embed_size_t embeded_data_size = 0;
   size_t embed_size = 0;
-  embed_size += lsb1_extract((uint8_t *)&size, sizeof(embed_size_t),
-                             carrier->data, carrier->image_size);
 
-  size = be32toh(size);
-
-  printf("FILE SIZE = %u\n", size);
-
-  uint8_t *buffer = malloc(size + 1);
-  if (buffer == NULL) {
+  uint8_t *embeded_data = malloc(carrier->image_size);
+  if (embeded_data == NULL) {
     return -1;
   }
+  embed_size += lsb1_extract(embeded_data, carrier->image_size / 8, carrier->data, carrier->image_size);
+  embeded_data_size = be32toh(((uint32_t *)embeded_data)[0]);
 
-  embed_size += lsb1_extract(buffer, size, carrier->data + embed_size,
-                             carrier->image_size - embed_size);
-  // buffer[size] = '\0';
+  uint8_t *plaintext = NULL;
+  long plaintext_len = 0;
+  uint32_t data_size = embeded_data_size;
 
-  uint8_t extension[256] = {0};
-  size_t ext_size = lsb1_extract(extension, 0, carrier->data + embed_size,
-                                 carrier->image_size - embed_size);
+  if (crypt_data != NULL) {
+    if (!decrypt(crypt_data, &plaintext, &plaintext_len, embeded_data + sizeof(uint32_t), embeded_data_size)) {
+      free(embeded_data);
+      return -1;
+    }
+    data_size = be32toh(((uint32_t *)plaintext)[0]);
+  } else {
+    plaintext = embeded_data;
+    plaintext_len = embeded_data_size;
+  }
 
-  printf("EXTENSION %s\n", extension);
-  printf("ext_size %zu\n", ext_size / 8);
-  embed_size += ext_size;
+  // printf("data_size: %d\n", data_size);
+  uint8_t *data = plaintext + sizeof(uint32_t);
+  char *extension = (char *)(plaintext + sizeof(uint32_t) + data_size);
 
-  // Create the filename with the extracted extension
   char filename[300];
   snprintf(filename, sizeof(filename), "extracted_file%s", extension);
 
-  // Save the extracted data to the file
   FILE *file = fopen(filename, "wb");
   if (file == NULL) {
     perror("Error opening file for writing");
-    free(buffer);
     return -1;
   }
-
-  // Write the data to the file
-  fwrite(buffer, 1, size, file);
+  fwrite(data, 1, data_size, file);
   fclose(file);
-
-  // printf("Extracted file size: %u\n", size);
-  // printf("Extracted file data: %s\n", buffer);
-  // printf("Extracted extension: %s\n", extension);
-  // printf("Extracted total size: %lu\n", embed_size);
-  // printf("EXT_SIZE: %zu", ext_size);
-
-  free(buffer);
+  if (crypt_data != NULL) {
+    free(plaintext);
+  }
+  free(embeded_data);
   return 0;
 }

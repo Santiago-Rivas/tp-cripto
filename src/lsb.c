@@ -29,6 +29,7 @@ size_t lsb1_embed(const uint8_t *data, size_t size, uint8_t *carrier,
 size_t lsb1_extract(uint8_t *data_out, size_t size, const uint8_t *carrier,
                     size_t carrier_size) {
   if (size * 8 > carrier_size) {
+    printf("size = %zu carrier_size = %zu too big!\n", size, carrier_size);
     return 0;
   }
 

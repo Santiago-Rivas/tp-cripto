@@ -37,6 +37,15 @@ int decrypt(CryptData * crypt_data, unsigned char **plaintext, long *plaintext_l
 
   const EVP_CIPHER *cipher = crypt_data->cipher;
 
+  // for (int i = 0 ;  i < crypt_data->keylen ; i++) {
+  //   printf("KEY %d\n", crypt_data->key_iv_pair[i]);
+  // }
+
+  // for (int i = 0 ;  i < crypt_data->ivlen; i++) {
+  //   printf("IV %d\n", crypt_data->key_iv_pair[crypt_data->keylen + i]);
+  // }
+
+
   EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
   EVP_DecryptInit_ex2(ctx, cipher, crypt_data->key_iv_pair, crypt_data->key_iv_pair + crypt_data->keylen, NULL);
 
@@ -51,6 +60,8 @@ int decrypt(CryptData * crypt_data, unsigned char **plaintext, long *plaintext_l
   plaintext_size = len;
 
   if (EVP_DecryptFinal_ex(ctx, *plaintext + len, &len) != 1) {
+    free(*plaintext);
+    EVP_CIPHER_CTX_free(ctx);
     printf("Error: EVP_EncryptFinal_ex.\n");
     return 0;
   }
@@ -91,6 +102,7 @@ const EVP_CIPHER *get_cipher(EncAlgo enc_algo, EncMode enc_mode) {
     return NULL;
   }
   snprintf(cipher_name, sizeof(cipher_name), "%s-%s", algo_name, mode_name);
+
   cipher = EVP_CIPHER_fetch(NULL, cipher_name, NULL);
   return cipher;
 }
@@ -137,9 +149,9 @@ int get_crypt_data(CryptData *crypt_data, const char *password,
   crypt_data->ivlen = EVP_CIPHER_iv_length(crypt_data->cipher);
 
   crypt_data->key_iv_pair = malloc(crypt_data->keylen + crypt_data->ivlen);
-  const unsigned char salt[8] = {0}; // TODO: should this be somewhere else?
+  // const unsigned char salt[8] = {0}; // TODO: should this be somewhere else?
 
-  PKCS5_PBKDF2_HMAC(password, sizeof(password), salt, sizeof(salt), 10000,
+  PKCS5_PBKDF2_HMAC(password, strlen(password), NULL, 0, 10000,
                     EVP_sha256(), crypt_data->keylen + crypt_data->ivlen,
                     crypt_data->key_iv_pair);
   return 1;
