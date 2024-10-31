@@ -195,7 +195,7 @@ int extract(Params *params, CryptData *crypt_data, BMPImage *carrier) {
   char *extension = (char *)(plaintext + sizeof(uint32_t) + data_size);
 
   char filename[300];
-  snprintf(filename, sizeof(filename), "extracted_file%s", extension);
+  snprintf(filename, sizeof(filename), "%s%s", params->output_file,  extension);
 
   FILE *file = fopen(filename, "wb");
   if (file == NULL) {
