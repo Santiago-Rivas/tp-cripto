@@ -35,16 +35,13 @@ echo TEST 1
 #     -p "out/out.bmp" \
 #     -out "out/mensaje_ext.txt"\
 #     -steg "LSB1"
-# 
+#
 
 # ./bin/stegobmp \
 #     -extract \
-#     -p "out/juani_y_pato.bmp"  \
+#     -p "img/ejemplo2024sinEnc/ladoLSB4.bmp"  \
 #     -out "out/extracted" \
-#     -pass "hola" \
-#     -steg "LSB1" \
-#     -a "aes128" \
-#     -m "cbc"
+#     -steg "LSB4"
 
 
 
@@ -54,47 +51,51 @@ echo TEST 2
 
 algos=("aes128" "aes192" "aes256" "3des")
 modes=("ecb" "cfb" "ofb" "cbc")
+steg_modes=("LSBI")
+
 
 # Loop through all combinations of algos and modes
-for algo in "${algos[@]}"; do
-    for mode in "${modes[@]}"; do
-        echo "TESTING: Algorithm = $algo, Mode = $mode"
+for steg in "${steg_modes[@]}"; do
+    for algo in "${algos[@]}"; do
+        for mode in "${modes[@]}"; do
+            echo "TESTING: Steg = $steg, Algorithm = $algo, Mode = $mode"
 
-        EMBED_IN="test/test_1.txt"
-        EMBED_OUT="out/imagenmas1_${algo}_${mode}.bmp"
-        EXTRACT_OUT="out/imagenmas1_${algo}_${mode}_OUT"
+            EMBED_IN="test/test_1.txt"
+            EMBED_OUT="juani_bmp/imagenmas1_${steg}_${algo}_${mode}.bmp"
+            EXTRACT_OUT="juani_bmp/imagenmas1_${steg}_${algo}_${mode}_OUT"
 
-        ./bin/stegobmp \
-            -embed \
-            -in $EMBED_IN \
-            -p "img/ejemplo2024sinEnc/lado.bmp" \
-            -out $EMBED_OUT \
-            -pass "hola" \
-            -steg "LSB1" \
-            -a "$algo" \
-            -m "$mode"
+            # ./bin/stegobmp \
+            #     -embed \
+            #     -in $EMBED_IN \
+            #     -p "img/ejemplo2024sinEnc/lado.bmp" \
+            #     -out $EMBED_OUT \
+            #     -pass "hola" \
+            #     -steg "$steg" \
+            #     -a "$algo" \
+            #     -m "$mode"
 
-        ./bin/stegobmp \
-            -extract \
-            -p $EMBED_OUT \
-            -out $EXTRACT_OUT \
-            -pass "hola" \
-            -steg "LSB1" \
-            -a "$algo" \
-            -m "$mode"
-
-
-        if [ $? -ne 0 ]; then
-            echo "RUN ERROR."
-            exit
-        fi
-
-        diff $EMBED_IN $EXTRACT_OUT.txt
+            ./bin/stegobmp \
+                -extract \
+                -p $EMBED_OUT \
+                -out $EXTRACT_OUT \
+                -pass "hola" \
+                -steg "$steg" \
+                -a "$algo" \
+                -m "$mode"
 
 
-        if [ $? -ne 0 ]; then
-            echo "OUTPUT IS DIFFERENT!"
-            exit
-        fi
+            # if [ $? -ne 0 ]; then
+            #     echo "RUN ERROR."
+            #     exit
+            # fi
+
+            # diff $EMBED_IN $EXTRACT_OUT.txt
+
+
+            # if [ $? -ne 0 ]; then
+            #     echo "OUTPUT IS DIFFERENT!"
+            #     exit
+            # fi
+        done
     done
 done

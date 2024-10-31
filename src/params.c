@@ -49,13 +49,13 @@ StegAlgo get_steg_algo(const char *steg_algo) {
   if (steg_algo == NULL) {
     return INVALID_STEG_ALGO;
   }
-  if (strcmp(steg_algo, "LSB1") != 0) {
+  if (strcmp(steg_algo, "LSB1") == 0) {
     return LSB1;
   }
-  if (strcmp(steg_algo, "LSB4") != 0) {
+  if (strcmp(steg_algo, "LSB4") == 0) {
     return LSB4;
   }
-  if (strcmp(steg_algo, "LSBI") != 0) {
+  if (strcmp(steg_algo, "LSBI") == 0) {
     return LSBI;
   }
   return INVALID_STEG_ALGO;
@@ -91,4 +91,34 @@ EncMode get_enc_mode(const char *enc_mode) {
     return ECB;
   }
   return INVALID_ENC_MODE;
+}
+
+
+lsb_func_t get_lsb_function(Operation op, StegAlgo steg_algo) {
+    switch (op) {
+        case EMBED:
+            switch (steg_algo) {
+                case LSB1:
+                    return (lsb_func_t) lsb1_embed;
+                case LSB4:
+                    return (lsb_func_t) lsb4_embed;
+                case LSBI:
+                    return (lsb_func_t) lsbi_embed;
+                default:
+                    return NULL;
+            }
+        case EXTRACT:
+            switch (steg_algo) {
+                case LSB1:
+                    return (lsb_func_t) lsb1_extract;
+                case LSB4:
+                    return (lsb_func_t) lsb4_extract;
+                case LSBI:
+                    return (lsb_func_t) lsbi_extract;
+                default:
+                    return NULL;
+            }
+        default:
+            return NULL;
+    }
 }

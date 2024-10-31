@@ -7,10 +7,10 @@
 
 #include "file_utils.h"
 #include "encryption.h"
+#include "lsb.h"
 #include "bmp.h"
 
 typedef enum { EMBED, EXTRACT, INVALID_OP } Operation;
-typedef enum { LSB1, LSB4, LSBI, INVALID_STEG_ALGO, EMPTY_STEG_ALGO } StegAlgo;
 
 typedef struct {
     Operation operation;
@@ -34,5 +34,7 @@ StegAlgo get_steg_algo(const char *steg_mode);
 EncAlgo get_enc_algo(const char *enc_algo);
 
 EncMode get_enc_mode(const char *enc_mode);
+
+lsb_func_t get_lsb_function(Operation op, StegAlgo steg_algo);
 
 # endif // PARAMS_H

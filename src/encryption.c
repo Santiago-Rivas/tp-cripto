@@ -54,12 +54,13 @@ int decrypt(CryptData *crypt_data, unsigned char **plaintext,
   EVP_DecryptInit_ex2(ctx, cipher, crypt_data->key_iv_pair,
                       crypt_data->key_iv_pair + crypt_data->keylen, NULL);
 
-  *plaintext = (unsigned char *)malloc(ciphertext_len);
+  fprintf(stderr, "%ld\n", ciphertext_len);
+  *plaintext = (unsigned char *)calloc(1, ciphertext_len);
   int len;
   int plaintext_size;
   if (EVP_DecryptUpdate(ctx, *plaintext, &len, ciphertext, ciphertext_len) !=
       1) {
-    printf("Error: EVP_EncryptUpdate.\n");
+    fprintf(stderr, "Error EVP_DecryptUpdate.\n");
     return 0;
   }
 
@@ -68,7 +69,7 @@ int decrypt(CryptData *crypt_data, unsigned char **plaintext,
   if (EVP_DecryptFinal_ex(ctx, *plaintext + len, &len) != 1) {
     free(*plaintext);
     EVP_CIPHER_CTX_free(ctx);
-    printf("Error: EVP_EncryptFinal_ex.\n");
+    fprintf(stderr, "Error EVP_DecryptFinal_ex.\n");
     return 0;
   }
   plaintext_size += len;
@@ -85,7 +86,9 @@ int derive_key_and_iv(const char *password, const EVP_CIPHER *cipher,
 
   int key_len = EVP_CIPHER_key_length(cipher);
 
-  if (!PKCS5_PBKDF2_HMAC(password, strlen(password), NULL, 0, ITERATIONS,
+  const unsigned char salt[8] = {0}; // TODO: should this be somewhere else?
+
+  if (!PKCS5_PBKDF2_HMAC(password, strlen(password), salt, sizeof(salt), ITERATIONS,
                          EVP_sha256(), key_len, key)) {
     return 0;
   }
@@ -109,6 +112,7 @@ const EVP_CIPHER *get_cipher(EncAlgo enc_algo, EncMode enc_mode) {
     return NULL;
   }
   snprintf(cipher_name, sizeof(cipher_name), "%s-%s", algo_name, mode_name);
+  printf("%s\n", cipher_name);
 
   cipher = EVP_CIPHER_fetch(NULL, cipher_name, NULL);
   return cipher;
