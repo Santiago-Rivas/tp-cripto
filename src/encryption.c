@@ -3,18 +3,21 @@
 const char *algo_to_string(EncAlgo enc_algo);
 const char *mode_to_string(EncMode enc_mode);
 
-int encrypt(CryptData * crypt_data, unsigned char *plaintext, long plaintext_len, unsigned char **ciphertext, long *ciphertext_len) {
+int encrypt(CryptData *crypt_data, unsigned char *plaintext, long plaintext_len,
+            unsigned char **ciphertext, long *ciphertext_len) {
 
   const EVP_CIPHER *cipher = crypt_data->cipher;
 
   EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
-  EVP_EncryptInit_ex2(ctx, cipher, crypt_data->key_iv_pair, crypt_data->key_iv_pair + crypt_data->keylen, NULL);
+  EVP_EncryptInit_ex2(ctx, cipher, crypt_data->key_iv_pair,
+                      crypt_data->key_iv_pair + crypt_data->keylen, NULL);
 
   *ciphertext =
       (unsigned char *)malloc(plaintext_len + EVP_CIPHER_block_size(cipher));
   int len;
   int ciphertext_size;
-  if (EVP_EncryptUpdate(ctx, *ciphertext, &len, plaintext, plaintext_len) != 1) {
+  if (EVP_EncryptUpdate(ctx, *ciphertext, &len, plaintext, plaintext_len) !=
+      1) {
     printf("Error: EVP_EncryptUpdate.\n");
     return 0;
   }
@@ -33,7 +36,9 @@ int encrypt(CryptData * crypt_data, unsigned char *plaintext, long plaintext_len
   return 1;
 }
 
-int decrypt(CryptData * crypt_data, unsigned char **plaintext, long *plaintext_len, unsigned char *ciphertext, long ciphertext_len) {
+int decrypt(CryptData *crypt_data, unsigned char **plaintext,
+            long *plaintext_len, unsigned char *ciphertext,
+            long ciphertext_len) {
 
   const EVP_CIPHER *cipher = crypt_data->cipher;
 
@@ -45,14 +50,15 @@ int decrypt(CryptData * crypt_data, unsigned char **plaintext, long *plaintext_l
   //   printf("IV %d\n", crypt_data->key_iv_pair[crypt_data->keylen + i]);
   // }
 
-
   EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
-  EVP_DecryptInit_ex2(ctx, cipher, crypt_data->key_iv_pair, crypt_data->key_iv_pair + crypt_data->keylen, NULL);
+  EVP_DecryptInit_ex2(ctx, cipher, crypt_data->key_iv_pair,
+                      crypt_data->key_iv_pair + crypt_data->keylen, NULL);
 
   *plaintext = (unsigned char *)malloc(ciphertext_len);
   int len;
   int plaintext_size;
-  if (EVP_DecryptUpdate(ctx, *plaintext, &len, ciphertext, ciphertext_len) != 1) {
+  if (EVP_DecryptUpdate(ctx, *plaintext, &len, ciphertext, ciphertext_len) !=
+      1) {
     printf("Error: EVP_EncryptUpdate.\n");
     return 0;
   }
@@ -99,6 +105,7 @@ const EVP_CIPHER *get_cipher(EncAlgo enc_algo, EncMode enc_mode) {
   const char *mode_name = mode_to_string(enc_mode);
 
   if (algo_name == NULL) {
+    printf("INVALID ALGO NAME\n");
     return NULL;
   }
   snprintf(cipher_name, sizeof(cipher_name), "%s-%s", algo_name, mode_name);
@@ -116,9 +123,9 @@ const char *algo_to_string(EncAlgo enc_algo) {
   case AES256:
     return "AES-256";
   case DES3:
-    return "DES-EDE3";
+    return "DES-EDE";
   default:
-    return NULL; // Unsupported encryption algorithm
+    return NULL;
   }
 }
 
@@ -133,7 +140,7 @@ const char *mode_to_string(EncMode enc_mode) {
   case CBC:
     return "CBC";
   default:
-    return NULL; // Unsupported encryption algorithm
+    return NULL;
   }
 }
 
@@ -151,15 +158,15 @@ int get_crypt_data(CryptData *crypt_data, const char *password,
   crypt_data->key_iv_pair = malloc(crypt_data->keylen + crypt_data->ivlen);
   // const unsigned char salt[8] = {0}; // TODO: should this be somewhere else?
 
-  PKCS5_PBKDF2_HMAC(password, strlen(password), NULL, 0, 10000,
-                    EVP_sha256(), crypt_data->keylen + crypt_data->ivlen,
+  PKCS5_PBKDF2_HMAC(password, strlen(password), NULL, 0, 10000, EVP_sha256(),
+                    crypt_data->keylen + crypt_data->ivlen,
                     crypt_data->key_iv_pair);
   return 1;
 }
 
-void free_crypt_data(CryptData * crypt_data) {
+void free_crypt_data(CryptData *crypt_data) {
   if (crypt_data != NULL) {
-    EVP_CIPHER_free((EVP_CIPHER *) crypt_data->cipher);
+    EVP_CIPHER_free((EVP_CIPHER *)crypt_data->cipher);
     free(crypt_data->key_iv_pair);
     free(crypt_data);
   }

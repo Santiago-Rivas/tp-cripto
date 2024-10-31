@@ -41,25 +41,19 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "Error: Steganography algorithm must be provided.\n");
     return 1;
   } else if (params.steg_algo == INVALID_STEG_ALGO) {
-    fprintf(
-        stderr,
-        "Error: Invalid steganography algorithm. Use LSB1, LSB4, or LSBI.\n");
+    fprintf( stderr, "Error: Invalid steganography algorithm. Use LSB1, LSB4, or LSBI.\n");
     return 1;
   }
 
-  // printf("Mode: %s\n", params.operation == EMBED ? "Embed" : "Extract");
-  // printf("Input file: %s\n",
-  //        params.input_file ? params.input_file : "Not provided");
-  // printf("Carrier BMP: %s\n",
-  //        params.carrier_bmp ? params.carrier_bmp : "Not provided");
-  // printf("Output file: %s\n",
-  //        params.output_file ? params.output_file : "Not provided");
+  if (params.enc_algo == INVALID_ENC_ALGO) {
+    fprintf(stderr, "Error: Invalid Encryption Algorithm.\n");
+    return 1;
+  }
 
-  // if (params.password != NULL) {
-  //   printf("Encryption with password '%s'\n", params.password);
-  // } else {
-  //   printf("No encryption applied.\n");
-  // }
+  if (params.enc_mode == INVALID_ENC_MODE) {
+    fprintf(stderr, "Error: Invalid Encryption Mode.\n");
+    return 1;
+  }
 
   CryptData *crypt_data = NULL;
   if (params.password != NULL) {
