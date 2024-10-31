@@ -100,38 +100,67 @@ int embed(Params *params, CryptData *crypt_data, BMPImage *carrier) {
 
   char *extension = get_file_extension(params->input_file);
   size_t ext_length = strlen(extension) + 1; // +1 for '\0'
-  printf("EXTENSION %s\n", extension);
-  printf("EXTENSION %zu\n", ext_length);
-
-  BMPImage *output = bmp_clone(carrier);
-  size_t embed_size = 0;
-
-  printf("FILE SIZE = %ld\n", file_size);
   uint32_t file_size_be = htobe32(file_size);
-  printf("FILE SIZE = %u\n", file_size_be);
 
-  embed_size += lsb1_embed((uint8_t *)&file_size_be, sizeof(uint32_t),
-                           output->data, output->image_size);
-  embed_size += lsb1_embed(file_data, file_size, output->data + embed_size,
-                           output->image_size - embed_size);
-  embed_size +=
-      lsb1_embed((uint8_t *)extension, ext_length, output->data + embed_size,
-                 output->image_size - embed_size);
-
-  // printf("Embedding file size: %lu\n", file_size);
-  // printf("Embedding file data: %s\n", file_data);
-  printf("Embedding extension: %s\n", extension);
-  // printf("Embedding total size: %lu\n", embed_size);
-
-  if (bmp_write(params->output_file, output)) {
-    fprintf(stderr, "Failed to write BMP to file\n");
-    free(output);
+  size_t buffer_size = sizeof(uint32_t) + file_size + ext_length;
+  unsigned char *embed_buffer = malloc(buffer_size);
+  if (embed_buffer == NULL) {
+    fprintf(stderr, "Failed to allocate memory for embedding buffer.\n");
     free(file_data);
     return 1;
   }
 
-  free(output);
+  memcpy(embed_buffer, &file_size_be, sizeof(uint32_t));
+  memcpy(embed_buffer + sizeof(uint32_t), file_data, file_size);
+  memcpy(embed_buffer + sizeof(uint32_t) + file_size, extension, ext_length);
+
+  if (crypt_data != NULL) {
+    uint8_t * enc_buffer = NULL;
+    long enc_buffer_len = 0;
+
+    encrypt(crypt_data, embed_buffer, buffer_size, &enc_buffer, &enc_buffer_len);
+
+    free(embed_buffer);
+    buffer_size = sizeof(uint32_t) + enc_buffer_len;
+    embed_buffer = malloc(buffer_size);
+
+    uint32_t enc_buffer_len_be = htobe32(enc_buffer_len);
+
+    memcpy(embed_buffer, &enc_buffer_len_be , sizeof(uint32_t));
+    memcpy(embed_buffer + sizeof(uint32_t), enc_buffer, enc_buffer_len);
+
+    free(enc_buffer);
+  }
+
+  BMPImage *output = bmp_clone(carrier);
+  if (output == NULL) {
+    fprintf(stderr, "Failed to clone BMP image.\n");
+    free(embed_buffer);
+    free(file_data);
+    return 1;
+  }
+
+  size_t embed_size = lsb1_embed(embed_buffer, buffer_size, output->data, output->image_size);
+
+  if (embed_size < buffer_size) {
+    fprintf(stderr, "Failed to embed all data, not enough space.\n");
+    free(embed_buffer);
+    free(file_data);
+    free(output);
+    return 1;
+  }
+
+  if (bmp_write(params->output_file, output)) {
+    fprintf(stderr, "Failed to write BMP to file\n");
+    free(embed_buffer);
+    free(file_data);
+    free(output);
+    return 1;
+  }
+
+  free(embed_buffer);
   free(file_data);
+  free(output);
   return 0;
 }
 

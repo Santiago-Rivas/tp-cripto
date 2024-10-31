@@ -12,7 +12,6 @@ size_t lsb1_embed(const uint8_t *data, size_t size, uint8_t *carrier,
   size_t embed_size = 0;
 
   for (size_t byte_i = 0; byte_i < size; byte_i++) {
-    printf("Hexadecimal (uppercase): %c %X\n", data[byte_i], data[byte_i]);  // Output: FF
     for (size_t bit_i = 0; bit_i < 8; bit_i++) {
       size_t embed_i = byte_i * 8 + bit_i;
 
