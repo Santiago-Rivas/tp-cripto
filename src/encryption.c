@@ -93,6 +93,13 @@ int decrypt(CryptData *crypt_data, unsigned char **plaintext,
     return 0;
   }
 
+  // use evp_decryptinit_ex instead of evp_decryptinit_ex2
+  // if (EVP_DecryptInit_ex(ctx, cipher, NULL, crypt_data->key_iv_pair, crypt_data->key_iv_pair + crypt_data->keylen) != 1) {
+  //   fprintf(stderr, "Error: EVP_DecryptInit_ex failed.\n");
+  //   EVP_CIPHER_CTX_free(ctx);
+  //   return 0;
+  // }
+
   fprintf(stderr, "Ciphertext Length: %ld\n", ciphertext_len);
   *plaintext = (unsigned char *)calloc(1, ciphertext_len + EVP_CIPHER_block_size(cipher));
   if (!*plaintext) {
@@ -189,8 +196,10 @@ int get_crypt_data(CryptData *crypt_data, const char *password,
     crypt_data->keylen = EVP_CIPHER_key_length(crypt_data->cipher);
     crypt_data->ivlen = EVP_CIPHER_iv_length(crypt_data->cipher);
     crypt_data->key_iv_pair = malloc(crypt_data->keylen + crypt_data->ivlen);
+
+        const unsigned char salt[8] = {0};
     
-    if (!PKCS5_PBKDF2_HMAC(password, strlen(password), NULL, 0, 10000, EVP_sha256(),
+    if (!PKCS5_PBKDF2_HMAC(password, strlen(password), salt, sizeof(salt), 10000, EVP_sha256(),
                            crypt_data->keylen + crypt_data->ivlen,
                            crypt_data->key_iv_pair)) {
         fprintf(stderr, "Error: Key derivation failed.\n");
