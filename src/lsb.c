@@ -131,7 +131,6 @@ size_t lsb4_extract(uint8_t *data_out, size_t size, const uint8_t *carrier, size
         return 0;
     }
 
-    size_t embed_size = 0;
     uint32_t hidden_iter = 0;
     uint8_t byte = 0;
     uint32_t i = 0, j = 0;

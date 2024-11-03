@@ -3,17 +3,17 @@
 const char *algo_to_string(EncAlgo enc_algo);
 const char *mode_to_string(EncMode enc_mode);
 
-void log_key_iv(unsigned char *key_iv_pair, int keylen, int ivlen) {
-    printf("Key: ");
-    for (int i = 0; i < keylen; i++) {
-        printf("%02x ", key_iv_pair[i]);
-    }
-    printf("\nIV: ");
-    for (int i = keylen; i < keylen + ivlen; i++) {
-        printf("%02x ", key_iv_pair[i]);
-    }
-    printf("\n");
-}
+// void log_key_iv(unsigned char *key_iv_pair, int keylen, int ivlen) {
+//     printf("Key: ");
+//     for (int i = 0; i < keylen; i++) {
+//         printf("%02x ", key_iv_pair[i]);
+//     }
+//     printf("\nIV: ");
+//     for (int i = keylen; i < keylen + ivlen; i++) {
+//         printf("%02x ", key_iv_pair[i]);
+//     }
+//     printf("\n");
+// }
 
 int encrypt(CryptData *crypt_data, unsigned char *plaintext, long plaintext_len,
             unsigned char **ciphertext, long *ciphertext_len) {
@@ -64,7 +64,7 @@ int encrypt(CryptData *crypt_data, unsigned char *plaintext, long plaintext_len,
   ciphertext_size += len;
 
   *ciphertext_len = ciphertext_size;
-  printf("Encryption completed successfully. Ciphertext length: %ld\n", *ciphertext_len);
+  // printf("Encryption completed successfully. Ciphertext length: %ld\n", *ciphertext_len);
 
   EVP_CIPHER_CTX_free(ctx);
   return 1;
@@ -93,14 +93,7 @@ int decrypt(CryptData *crypt_data, unsigned char **plaintext,
     return 0;
   }
 
-  // use evp_decryptinit_ex instead of evp_decryptinit_ex2
-  // if (EVP_DecryptInit_ex(ctx, cipher, NULL, crypt_data->key_iv_pair, crypt_data->key_iv_pair + crypt_data->keylen) != 1) {
-  //   fprintf(stderr, "Error: EVP_DecryptInit_ex failed.\n");
-  //   EVP_CIPHER_CTX_free(ctx);
-  //   return 0;
-  // }
-
-  fprintf(stderr, "Ciphertext Length: %ld\n", ciphertext_len);
+  // fprintf(stderr, "Ciphertext Length: %ld\n", ciphertext_len);
   *plaintext = (unsigned char *)calloc(1, ciphertext_len + EVP_CIPHER_block_size(cipher));
   if (!*plaintext) {
     fprintf(stderr, "Error: Memory allocation for plaintext failed.\n");
@@ -119,7 +112,7 @@ int decrypt(CryptData *crypt_data, unsigned char **plaintext,
   }
   
   plaintext_size = len;
-  fprintf(stderr, "Plaintext after EVP_DecryptUpdate length: %d\n", plaintext_size);
+  // fprintf(stderr, "Plaintext after EVP_DecryptUpdate length: %d\n", plaintext_size);
 
   if (EVP_DecryptFinal_ex(ctx, *plaintext + len, &len) != 1) {
     free(*plaintext);
@@ -129,7 +122,7 @@ int decrypt(CryptData *crypt_data, unsigned char **plaintext,
   }
   
   plaintext_size += len;
-  fprintf(stderr, "Final plaintext length after EVP_DecryptFinal_ex: %d\n", plaintext_size);
+  // fprintf(stderr, "Final plaintext length after EVP_DecryptFinal_ex: %d\n", plaintext_size);
   
   *plaintext_len = plaintext_size;
 
@@ -159,8 +152,8 @@ int derive_key_and_iv(const char *password, const EVP_CIPHER *cipher,
     return 0;
   }
 
-  printf("Key and IV derived successfully.\n");
-  log_key_iv(key, key_len, iv_len);
+  // printf("Key and IV derived successfully.\n");
+  // log_key_iv(key, key_len, iv_len);
   return 1;
 }
 
@@ -175,8 +168,9 @@ const EVP_CIPHER *get_cipher(EncAlgo enc_algo, EncMode enc_mode) {
     fprintf(stderr, "Error: Invalid algorithm or mode.\n");
     return NULL;
   }
+  // TODO: Ver este print
   snprintf(cipher_name, sizeof(cipher_name), "%s-%s", algo_name, mode_name);
-  printf("Cipher selected: %s\n", cipher_name);
+  // printf("Cipher selected: %s\n", cipher_name);
 
   cipher = EVP_CIPHER_fetch(NULL, cipher_name, NULL);
   if (!cipher) {
@@ -207,7 +201,7 @@ int get_crypt_data(CryptData *crypt_data, const char *password,
         return 0;
     }
 
-    log_key_iv(crypt_data->key_iv_pair, crypt_data->keylen, crypt_data->ivlen);
+    // log_key_iv(crypt_data->key_iv_pair, crypt_data->keylen, crypt_data->ivlen);
     
     return 1;
 }

@@ -15,7 +15,7 @@ BMPImage *bmp_read(const char *filename)
 
   // Read the BMP header
   uint8_t raw_header[sizeof(BMPHeader)];
-  printf("sizeof(BMPHeader) = %zu\n", sizeof(BMPHeader));
+  // printf("sizeof(BMPHeader) = %zu\n", sizeof(BMPHeader));
   if (fread(&raw_header, 1, sizeof(BMPHeader), file) != sizeof(BMPHeader))
   {
     fprintf(stderr, "Failed to read header.\n");
@@ -23,17 +23,17 @@ BMPImage *bmp_read(const char *filename)
     return NULL;
   }
   BMPHeader header;
-      printf("RAW HEADER: ");
-    for (size_t i = 0; i < 54; i++) {
-        printf("%02X ", raw_header[i]);
-    }
-    printf("\n");
+    //   printf("RAW HEADER: ");
+    // for (size_t i = 0; i < 54; i++) {
+    //     printf("%02X ", raw_header[i]);
+    // }
+    // printf("\n");
   memcpy(&header, raw_header, sizeof(BMPHeader));
 
   // Check if the file is a BMP file
   if (header.type != BMP_MAGIC)
   {
-    printf("header.type = %x BMP_MAGIC = %x\n", header.type, BMP_MAGIC);
+    // printf("header.type = %x BMP_MAGIC = %x\n", header.type, BMP_MAGIC);
     fprintf(stderr, "Not a BMP.\n");
     fclose(file);
     return NULL;
@@ -63,9 +63,9 @@ BMPImage *bmp_read(const char *filename)
     return NULL;
   }
 
-  printf("data_size = %d\n", image_size);
-  printf("header.size = %d\n", image->header.size);
-  printf("header.offset = %d\n", image->header.offset);
+  // printf("data_size = %d\n", image_size);
+  // printf("header.size = %d\n", image->header.size);
+  // printf("header.offset = %d\n", image->header.offset);
 
   if (fread(image->data, image_size, 1, file) != 1)
   {
