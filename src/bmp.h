@@ -8,7 +8,7 @@
 #pragma pack(push, 1)  // Ensure no padding is added to structures
 
 // BMP header structure
-typedef struct {      // Total: 54 bytes
+typedef struct __attribute__((packed)) {      // Total: 54 bytes
     uint16_t type;              // Magic identifier: 0x4d42
     uint32_t size;              // File size in bytes
     uint16_t reserved1;         // Not used

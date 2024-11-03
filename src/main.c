@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "EMBED\n");
     return_val = embed(&params, crypt_data, image);
   } else if (params.operation == EXTRACT) {
-    fprintf(stderr, "EXTRACT\n");
+    fprintf(stderr, "\nEXTRACT\n");
     return_val = extract(&params, crypt_data, image);
   }
 
@@ -137,6 +137,8 @@ int embed(Params *params, CryptData *crypt_data, BMPImage *carrier) {
 
   size_t embed_size = get_lsb_function(params->operation, params->steg_algo)(embed_buffer, buffer_size, output->data, output->image_size);
 
+  fprintf(stderr, "EMBED SIZE: %zu\n", embed_size);
+
   if (embed_size == 0) {
     fprintf(stderr, "Failed to embed all data, not enough space.\n");
     free(embed_buffer);
@@ -160,82 +162,115 @@ int embed(Params *params, CryptData *crypt_data, BMPImage *carrier) {
 }
 
 int extract(Params *params, CryptData *crypt_data, BMPImage *carrier) {
-  embed_size_t embeded_data_size = 0;
-  size_t embed_size = 0;
+    embed_size_t embeded_data_size = 0;
+    size_t embed_size = 0;
 
-  uint8_t *embeded_data = calloc(1, carrier->image_size);
-  if (embeded_data == NULL) {
-    return -1;
-  }
-  embed_size += get_lsb_function(params->operation, params->steg_algo)(embeded_data, carrier->image_size / 8, carrier->data, carrier->image_size);
-  embeded_data_size = be32toh(((uint32_t *)embeded_data)[0]);
+    long image_size = carrier->header.size - 54;
+    carrier->image_size = image_size;
 
-  if (embeded_data_size == 0) {
-    free(embeded_data);
-    fprintf(stderr, "Error: Nothing to read.\n");
-    return -1;
-  }
-
-  if (embeded_data_size > carrier->image_size) {
-    free(embeded_data);
-    fprintf(stderr, "Error: Embeded data size too big.\n");
-    return -1;
-  }
-
-  uint8_t *plaintext = NULL;
-  long plaintext_len = 0;
-  uint32_t data_size = embeded_data_size;
-
-
-  if (crypt_data != NULL) {
-    if (!decrypt(crypt_data, &plaintext, &plaintext_len, embeded_data + sizeof(uint32_t), embeded_data_size)) {
-      free(embeded_data);
-      return -1;
+    // Allocate memory for embedded data
+    uint8_t *embeded_data = calloc(1, carrier->image_size);
+    if (embeded_data == NULL) {
+        return -1;
     }
-    data_size = be32toh(((uint32_t *)plaintext)[0]);
-  } else {
-    plaintext = embeded_data;
-    plaintext_len = embeded_data_size;
-  }
 
-  printf("data_size: %ul %ul\n", data_size, (uint32_t) plaintext_len);
+    // Extract data from carrier using least significant bit (LSB) method
+    embed_size += get_lsb_function(params->operation, params->steg_algo)(embeded_data, carrier->image_size, carrier->data, carrier->image_size);
 
-  if (data_size > (uint32_t) plaintext_len) {
-    if (crypt_data != NULL) {
-      free(plaintext);
+    // Print raw embedded data size bytes (for debugging purposes)
+    fprintf(stderr, "Embedded data raw size bytes: %02x %02x %02x %02x\n", embeded_data[0], embeded_data[1], embeded_data[2], embeded_data[3]);
+
+    // Convert to host byte order
+    embeded_data_size = be32toh(((uint32_t *)embeded_data)[0]);
+    fprintf(stderr, "Embedded data size (after be32toh): %u\n", embeded_data_size);
+
+    // Error check: Ensure there's data to read
+    if (embeded_data_size == 0) {
+        free(embeded_data);
+        fprintf(stderr, "Error: Nothing to read.\n");
+        return -1;
     }
-    free(embeded_data);
 
-    fprintf(stderr, "Error: Data size too big.\n");
-    return -1;
-  }
-  // printf("data_size: %d\n", data_size);
-  uint8_t *data = plaintext + sizeof(uint32_t);
-  char *extension = (char *)(plaintext + sizeof(uint32_t) + data_size);
+    // Error check: Ensure embedded data size does not exceed image size
+    if (embeded_data_size > carrier->image_size) {
+        free(embeded_data);
+        fprintf(stderr, "Error: Embedded data size too big.\n");
+        return -1;
+    }
 
-  // for (int i = 0 ; i < data_size  - 1; i++) {
-  //   printf("DATA: %x\n", data[i]);
-  // }
-
-  char filename[500] = {0};
-  snprintf(filename, sizeof(filename), "%s%s", params->output_file,  extension);
-  filename[254] = 0;
-
-  FILE *file = fopen(filename, "wb");
-  if (file == NULL) {
+    uint8_t *plaintext = NULL;
+    long plaintext_len = 0;
+    uint32_t data_size = embeded_data_size;
 
     if (crypt_data != NULL) {
-      free(plaintext);
+        // Decrypt the embedded data if cryptographic data is provided
+        if (!decrypt(crypt_data, &plaintext, &plaintext_len, embeded_data + sizeof(uint32_t), embeded_data_size)) {
+            free(embeded_data);
+            return -1;
+        }
+
+        // Check the length and initial bytes of decrypted plaintext
+        if (plaintext_len > 0) {
+            fprintf(stderr, "Decrypted plaintext length: %ld\n", plaintext_len);
+            fprintf(stderr, "First 4 bytes of plaintext as hex: %02x %02x %02x %02x\n", plaintext[0], plaintext[1], plaintext[2], plaintext[3]);
+
+            uint32_t raw_data_size = ((uint32_t *)plaintext)[0];
+            printf("Raw embedded data size (before be32toh): %u\n", raw_data_size);
+
+            data_size = be32toh(raw_data_size);
+            printf("Embedded data size (after be32toh): %u\n", data_size);
+        } else {
+            fprintf(stderr, "Error: Decrypted plaintext length is zero.\n");
+            free(embeded_data);
+            return -1;
+        }
+    } else {
+        plaintext = embeded_data;
+        plaintext_len = embeded_data_size;
+        data_size = be32toh(((uint32_t *)plaintext)[0]);
+    }
+
+    // Sanity check: Ensure data size does not exceed plaintext length
+    if (data_size > (uint32_t)plaintext_len) {
+        fprintf(stderr, "Sanity check failed: data_size (%u) is larger than plaintext length (%ld).\n", data_size, plaintext_len);
+        if (crypt_data != NULL) {
+            free(plaintext);
+        }
+        free(embeded_data);
+        return -1;
+    }
+
+    fprintf(stderr, "Extracted data size: %u\n", data_size);
+
+    // Adjust pointers to the actual data and file extension
+    uint8_t *data = plaintext + sizeof(uint32_t);
+    char *extension = (char *)(plaintext + sizeof(uint32_t) + data_size);
+
+    // Create output file with proper extension
+    char filename[500] = {0};
+    snprintf(filename, sizeof(filename), "%s%s", params->output_file, extension);
+    filename[254] = 0;
+
+    printf("Output file: %s\n", filename);
+
+    FILE *file = fopen(filename, "wb");
+    if (file == NULL) {
+        if (crypt_data != NULL) {
+            free(plaintext);
+        }
+        free(embeded_data);
+        perror("Error opening file for writing");
+        return -1;
+    }
+
+    // Write the extracted data to the file
+    fwrite(data, 1, data_size, file);
+    fclose(file);
+
+    // Free allocated memory
+    if (crypt_data != NULL) {
+        free(plaintext);
     }
     free(embeded_data);
-    perror("Error opening file for writing");
-    return -1;
-  }
-  fwrite(data, 1, data_size, file);
-  fclose(file);
-  if (crypt_data != NULL) {
-    free(plaintext);
-  }
-  free(embeded_data);
-  return 0;
+    return 0;
 }
