@@ -3,18 +3,6 @@
 const char* algo_to_string(EncAlgo enc_algo);
 const char* mode_to_string(EncMode enc_mode);
 
-// void log_key_iv(unsigned char *key_iv_pair, int keylen, int ivlen) {
-//     printf("Key: ");
-//     for (int i = 0; i < keylen; i++) {
-//         printf("%02x ", key_iv_pair[i]);
-//     }
-//     printf("\nIV: ");
-//     for (int i = keylen; i < keylen + ivlen; i++) {
-//         printf("%02x ", key_iv_pair[i]);
-//     }
-//     printf("\n");
-// }
-
 int encrypt(CryptData* crypt_data, unsigned char* plaintext, long plaintext_len,
   unsigned char** ciphertext, long* ciphertext_len) {
 
@@ -61,12 +49,12 @@ int encrypt(CryptData* crypt_data, unsigned char* plaintext, long plaintext_len,
     free(*ciphertext);
     return 0;
   }
-  ciphertext_size += len;
 
+  ciphertext_size += len;
   *ciphertext_len = ciphertext_size;
-  // printf("Encryption completed successfully. Ciphertext length: %ld\n", *ciphertext_len);
 
   EVP_CIPHER_CTX_free(ctx);
+
   return 1;
 }
 
@@ -93,7 +81,6 @@ int decrypt(CryptData* crypt_data, unsigned char** plaintext,
     return 0;
   }
 
-  // fprintf(stderr, "Ciphertext Length: %ld\n", ciphertext_len);
   *plaintext = (unsigned char*)calloc(1, ciphertext_len + EVP_CIPHER_block_size(cipher));
   if (!*plaintext) {
     fprintf(stderr, "Error: Memory allocation for plaintext failed.\n");
@@ -112,7 +99,6 @@ int decrypt(CryptData* crypt_data, unsigned char** plaintext,
   }
 
   plaintext_size = len;
-  // fprintf(stderr, "Plaintext after EVP_DecryptUpdate length: %d\n", plaintext_size);
 
   if (EVP_DecryptFinal_ex(ctx, *plaintext + len, &len) != 1) {
     free(*plaintext);
@@ -122,8 +108,6 @@ int decrypt(CryptData* crypt_data, unsigned char** plaintext,
   }
 
   plaintext_size += len;
-  // fprintf(stderr, "Final plaintext length after EVP_DecryptFinal_ex: %d\n", plaintext_size);
-
   *plaintext_len = plaintext_size;
 
   if (*plaintext_len != ciphertext_len) {
@@ -138,7 +122,7 @@ int derive_key_and_iv(const char* password, const EVP_CIPHER* cipher,
   unsigned char* key, unsigned char* iv) {
 
   int key_len = EVP_CIPHER_key_length(cipher);
-  const unsigned char salt[8] = { 0 }; // Static salt for debugging
+  const unsigned char salt[8] = { 0 };
 
   if (!PKCS5_PBKDF2_HMAC(password, strlen(password), salt, sizeof(salt), 10000,
     EVP_sha256(), key_len, key)) {
@@ -152,8 +136,6 @@ int derive_key_and_iv(const char* password, const EVP_CIPHER* cipher,
     return 0;
   }
 
-  // printf("Key and IV derived successfully.\n");
-  // log_key_iv(key, key_len, iv_len);
   return 1;
 }
 
@@ -170,7 +152,6 @@ const EVP_CIPHER* get_cipher(EncAlgo enc_algo, EncMode enc_mode) {
   }
   // TODO: Ver este print
   snprintf(cipher_name, sizeof(cipher_name), "%s-%s", algo_name, mode_name);
-  // printf("Cipher selected: %s\n", cipher_name);
 
   cipher = EVP_CIPHER_fetch(NULL, cipher_name, NULL);
   if (!cipher) {
@@ -200,8 +181,6 @@ int get_crypt_data(CryptData* crypt_data, const char* password,
     free(crypt_data->key_iv_pair);
     return 0;
   }
-
-  // log_key_iv(crypt_data->key_iv_pair, crypt_data->keylen, crypt_data->ivlen);
 
   return 1;
 }

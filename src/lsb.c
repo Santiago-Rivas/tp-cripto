@@ -4,7 +4,7 @@
 
 #define LSBI_PATTERNS 4
 #define LSBI_OPERATIONS 8
-#define LSB1_MASK 0xFE // Mask for setting LSB1 to 0
+#define LSB1_MASK 0xFE
 
 typedef struct {
   uint32_t changed;
@@ -15,7 +15,7 @@ static uint8_t get_i_nibble(uint8_t byte, uint8_t i) {
   return (byte >> ((i - 1) * 4)) & 0xF;
 }
 
-// Helper function to get the pattern index based on specific bits in a byte
+// Get the pattern index based on specific bits in a byte
 static uint8_t get_pattern_index(uint8_t byte) {
   return (byte & 0x06) >> 1; // Extract bits 1 and 2 for pattern index
 }
@@ -72,9 +72,6 @@ size_t lsb1_extract(uint8_t* data_out, size_t size, const uint8_t* carrier, size
       data_out[byte_i] |= data_bit;
       embed_size++;
     }
-    // printf("Hexadecimal (uppercase): %c %X\n", data_out[byte_i],
-    // data_out[byte_i]);  // Output: FF printf("Hexadecimal (uppercase): %X\n",
-    // data_out[byte_i]);  // Output: FF
 
     if (size == 0 && data_out[byte_i] == '\0') {
       break;
@@ -108,10 +105,8 @@ size_t lsb4_embed(uint8_t* data, size_t size, uint8_t* carrier, size_t carrier_s
 
 size_t lsb4_extract(uint8_t* data_out, size_t size, const uint8_t* carrier, size_t carrier_size) {
   size = carrier_size / 2;
-  //printf("[Func1] Initial: size = %zu carrier_size = %zu\n", size, carrier_size);
 
   if (size * 2 > carrier_size) {
-    //printf("[Func1] Error: size * 2 (%zu) > carrier_size (%zu)\n", size * 2, carrier_size);
     return 0;
   }
 
@@ -119,40 +114,32 @@ size_t lsb4_extract(uint8_t* data_out, size_t size, const uint8_t* carrier, size
   uint8_t byte = 0;
   uint32_t i = 0, j = 0;
 
-  //printf("[Func1] Starting extraction loop\n");
   for (i = 0, j = 0; i < carrier_size; i++) {
     if (i * 2 >= carrier_size) {
-      //printf("[Func1] Break: i * 2 (%u) >= carrier_size (%zu)\n", i * 2, carrier_size);
       break;
     }
 
     uint8_t nibble = get_i_nibble(carrier[i], 1);
-    //printf("[Func1] i=%u, carrier[i]=0x%02X, nibble=0x%X\n", i, carrier[i], nibble);
-
     byte <<= 4;
     byte |= nibble;
-    //printf("[Func1] After shift/or: byte=0x%02X, j=%u\n", byte, j);
 
     if (++j % 2 == 0) {
-      //printf("[Func1] Storing byte 0x%02X at position %u\n", byte, hidden_iter);
       data_out[hidden_iter++] = byte;
       byte = 0;
       j = 0;
     }
 
     if (size == 0 && data_out[i] == '\0') {
-      //printf("[Func1] Break: Null terminator found at position %u\n", i);
       break;
     }
   }
 
-  //printf("[Func1] Final: processed %u bytes, produced %u output bytes\n", i, hidden_iter);
   return i;
 }
 
 size_t lsbi_embed(uint8_t* data, size_t size, uint8_t* carrier, size_t carrier_size) {
   if (size * 8 > carrier_size) {
-    return 0; // Return 0 if the data is too large to embed in the carrier
+    return 0;
   }
 
   bit_modified bits_modified[LSBI_PATTERNS] = { 0 };
