@@ -109,7 +109,7 @@ size_t lsb4_extract(uint8_t* data_out, size_t size, const uint8_t* carrier, size
     return 0;
   }
 
-  uint32_t hidden_iter = 0;
+  uint32_t data_iter = 0;
   uint8_t byte = 0;
   uint32_t i = 0, j = 0;
 
@@ -123,7 +123,7 @@ size_t lsb4_extract(uint8_t* data_out, size_t size, const uint8_t* carrier, size
     byte |= nibble;
 
     if (++j % 2 == 0) {
-      data_out[hidden_iter++] = byte;
+      data_out[data_iter++] = byte;
       byte = 0;
       j = 0;
     }
@@ -154,12 +154,10 @@ size_t lsbi_embed(uint8_t* data, size_t size, uint8_t* carrier, size_t carrier_s
 
         if (hide_bit == carrier_bit) {
           bits_modified[pattern_index].not_changed++;
-        }
-        else {
+        } else {
           bits_modified[pattern_index].changed++;
         }
-      }
-      else {
+      } else {
         carrier_index++;
         bit_i++;
       }
@@ -201,7 +199,7 @@ size_t lsbi_extract(uint8_t* data_out, size_t size, const uint8_t* carrier, size
   }
 
   uint8_t byte = 0;
-  uint32_t hidden_iter = 0;
+  uint32_t data_iter = 0;
   uint32_t carrier_iter = 0;
   uint8_t patterns[4] = { 0 };
 
@@ -220,13 +218,12 @@ size_t lsbi_extract(uint8_t* data_out, size_t size, const uint8_t* carrier, size
       byte <<= 1;
       byte |= bit;
       if (++j % 8 == 0) {
-        data_out[hidden_iter++] = byte;
+        data_out[data_iter++] = byte;
         byte = 0;
         j = 0;
       }
       carrier_iter++;
-    }
-    else {
+    } else {
       carrier_iter++;
     }
   }

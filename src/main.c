@@ -162,39 +162,39 @@ int embed(Params* params, CryptData* crypt_data, BMPImage* carrier) {
 }
 
 int extract(Params* params, CryptData* crypt_data, BMPImage* carrier) {
-  embed_size_t embeded_data_size = 0;
+  embed_size_t embedded_data_size = 0;
   size_t embed_size = 0;
 
   long image_size = carrier->header.size - carrier->header.offset;
   carrier->image_size = image_size;
 
-  uint8_t* embeded_data = calloc(1, carrier->image_size);
-  if (embeded_data == NULL) {
+  uint8_t* embedded_data = calloc(1, carrier->image_size);
+  if (embedded_data == NULL) {
     return -1;
   }
 
-  embed_size += get_lsb_function(params->operation, params->steg_algo)(embeded_data, carrier->image_size, carrier->data, carrier->image_size);
-  embeded_data_size = be32toh(((uint32_t*)embeded_data)[0]);
+  embed_size += get_lsb_function(params->operation, params->steg_algo)(embedded_data, carrier->image_size, carrier->data, carrier->image_size);
+  embedded_data_size = be32toh(((uint32_t*)embedded_data)[0]);
 
-  if (embeded_data_size == 0) {
-    free(embeded_data);
+  if (embedded_data_size == 0) {
+    free(embedded_data);
     fprintf(stderr, "Error: Nothing to read.\n");
     return -1;
   }
 
-  if (embeded_data_size > carrier->image_size) {
-    free(embeded_data);
+  if (embedded_data_size > carrier->image_size) {
+    free(embedded_data);
     fprintf(stderr, "Error: Embedded data size too big.\n");
     return -1;
   }
 
   uint8_t* plaintext = NULL;
   long plaintext_len = 0;
-  uint32_t data_size = embeded_data_size;
+  uint32_t data_size = embedded_data_size;
 
   if (crypt_data != NULL) {
-    if (!decrypt(crypt_data, &plaintext, &plaintext_len, embeded_data + sizeof(uint32_t), embeded_data_size)) {
-      free(embeded_data);
+    if (!decrypt(crypt_data, &plaintext, &plaintext_len, embedded_data + sizeof(uint32_t), embedded_data_size)) {
+      free(embedded_data);
       return -1;
     }
 
@@ -204,13 +204,13 @@ int extract(Params* params, CryptData* crypt_data, BMPImage* carrier) {
     }
     else {
       fprintf(stderr, "Error: Decrypted plaintext length is zero.\n");
-      free(embeded_data);
+      free(embedded_data);
       return -1;
     }
   }
   else {
-    plaintext = embeded_data;
-    plaintext_len = embeded_data_size;
+    plaintext = embedded_data;
+    plaintext_len = embedded_data_size;
     data_size = be32toh(((uint32_t*)plaintext)[0]);
   }
 
@@ -218,7 +218,7 @@ int extract(Params* params, CryptData* crypt_data, BMPImage* carrier) {
     if (crypt_data != NULL) {
       free(plaintext);
     }
-    free(embeded_data);
+    free(embedded_data);
     return -1;
   }
 
@@ -238,7 +238,7 @@ int extract(Params* params, CryptData* crypt_data, BMPImage* carrier) {
     if (crypt_data != NULL) {
       free(plaintext);
     }
-    free(embeded_data);
+    free(embedded_data);
     perror("Error opening file for writing");
     return -1;
   }
@@ -249,6 +249,6 @@ int extract(Params* params, CryptData* crypt_data, BMPImage* carrier) {
   if (crypt_data != NULL) {
     free(plaintext);
   }
-  free(embeded_data);
+  free(embedded_data);
   return 0;
 }
