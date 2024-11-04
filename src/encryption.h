@@ -17,25 +17,25 @@ typedef enum { ECB, CFB, OFB, CBC, INVALID_ENC_MODE } EncMode;
 typedef struct {
   int keylen;
   int ivlen;
-  unsigned char *key_iv_pair;
-  const EVP_CIPHER *cipher;
+  unsigned char* key_iv_pair;
+  const EVP_CIPHER* cipher;
 } CryptData;
 
-int derive_key_and_iv(const char *password, const EVP_CIPHER *cipher,
-                      unsigned char *key, unsigned char *iv);
+int derive_key_and_iv(const char* password, const EVP_CIPHER* cipher,
+  unsigned char* key, unsigned char* iv);
 
-const EVP_CIPHER *get_cipher(EncAlgo enc_algo, EncMode enc_mode);
+const EVP_CIPHER* get_cipher(EncAlgo enc_algo, EncMode enc_mode);
 
-int get_crypt_data(CryptData *crypt_data, const char *password,
-                   EncAlgo enc_algo, EncMode enc_mode);
+int get_crypt_data(CryptData* crypt_data, const char* password,
+  EncAlgo enc_algo, EncMode enc_mode);
 
-void free_crypt_data(CryptData *crypt_data);
+void free_crypt_data(CryptData* crypt_data);
 
-int encrypt(CryptData *crypt_data, unsigned char *plaintext, long plaintext_len,
-            unsigned char **ciphertext, long *ciphertext_len);
+int encrypt(CryptData* crypt_data, unsigned char* plaintext, long plaintext_len,
+  unsigned char** ciphertext, long* ciphertext_len);
 
-int decrypt(CryptData *crypt_data, unsigned char **plaintext,
-            long *plaintext_len, unsigned char *ciphertext,
-            long ciphertext_len);
+int decrypt(CryptData* crypt_data, unsigned char** plaintext,
+  long* plaintext_len, unsigned char* ciphertext,
+  long ciphertext_len);
 
 #endif // ENCRYPTION_H

@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-long get_file_size(FILE *file) {
+long get_file_size(FILE* file) {
     long prev = ftell(file);
     if (prev == -1L) {
         return -1L;
@@ -18,7 +18,7 @@ long get_file_size(FILE *file) {
     if (size == -1L) {
         return -1L;
     }
-    
+
     if (fseek(file, prev, SEEK_SET)) {
         return -1L;
     }
@@ -26,17 +26,17 @@ long get_file_size(FILE *file) {
     return size;
 }
 
-char *get_file_extension(const char *filename) {
-    char *extension = strrchr(filename, '.');
+char* get_file_extension(const char* filename) {
+    char* extension = strrchr(filename, '.');
     if (extension == NULL || extension == filename) {
         return "";
     }
-    
+
     return extension;
 }
 
-void *read_file_data(const char *filename, long *size_out) {
-    FILE *file = fopen(filename, "rb");
+void* read_file_data(const char* filename, long* size_out) {
+    FILE* file = fopen(filename, "rb");
     if (!file) {
         fprintf(stderr, "Error: Cannot open file %s\n", filename);
         return NULL;
@@ -48,7 +48,7 @@ void *read_file_data(const char *filename, long *size_out) {
         return NULL;
     }
 
-    void *data = malloc(size);
+    void* data = malloc(size);
     if (!data) {
         fclose(file);
         return NULL;

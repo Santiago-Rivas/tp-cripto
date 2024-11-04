@@ -4,40 +4,48 @@ void print_usage() {
   printf("Usage:\n");
   printf("To embed data:\n");
   printf("$ stegobmp -embed -in <file> -p <bitmapfile> -out <bitmapfile> -steg "
-         "<LSB1|LSB4|LSBI> [-a <aes128|aes192|aes256|3des>] [-m "
-         "<ecb|cfb|ofb|cbc>] [-pass <password>]\n");
+    "<LSB1|LSB4|LSBI> [-a <aes128|aes192|aes256|3des>] [-m "
+    "<ecb|cfb|ofb|cbc>] [-pass <password>]\n");
   printf("To extract data:\n");
   printf("$ stegobmp -extract -p <bitmapfile> -out <file> -steg "
-         "<LSB1|LSB4|LSBI> [-a <aes128|aes192|aes256|3des>] [-m "
-         "<ecb|cfb|ofb|cbc>] [-pass <password>]\n");
+    "<LSB1|LSB4|LSBI> [-a <aes128|aes192|aes256|3des>] [-m "
+    "<ecb|cfb|ofb|cbc>] [-pass <password>]\n");
 }
 
-Operation get_operation(const char *operation) {
+Operation get_operation(const char* operation) {
   if (strcmp(operation, "-embed") == 0) {
     return EMBED;
-  } else if (strcmp(operation, "-extract") == 0) {
+  }
+  else if (strcmp(operation, "-extract") == 0) {
     return EXTRACT;
   }
   return INVALID_OP;
 }
 
-int read_params(Params *params, int argc, char *argv[]) {
+int read_params(Params* params, int argc, char* argv[]) {
   for (int i = 2; i < argc; i++) {
     if (strcmp(argv[i], "-in") == 0 && i + 1 < argc) {
       params->input_file = argv[++i];
-    } else if (strcmp(argv[i], "-p") == 0 && i + 1 < argc) {
+    }
+    else if (strcmp(argv[i], "-p") == 0 && i + 1 < argc) {
       params->carrier_bmp = argv[++i];
-    } else if (strcmp(argv[i], "-out") == 0 && i + 1 < argc) {
+    }
+    else if (strcmp(argv[i], "-out") == 0 && i + 1 < argc) {
       params->output_file = argv[++i];
-    } else if (strcmp(argv[i], "-steg") == 0 && i + 1 < argc) {
+    }
+    else if (strcmp(argv[i], "-steg") == 0 && i + 1 < argc) {
       params->steg_algo = get_steg_algo(argv[++i]);
-    } else if (strcmp(argv[i], "-a") == 0 && i + 1 < argc) {
+    }
+    else if (strcmp(argv[i], "-a") == 0 && i + 1 < argc) {
       params->enc_algo = get_enc_algo(argv[++i]);
-    } else if (strcmp(argv[i], "-m") == 0 && i + 1 < argc) {
+    }
+    else if (strcmp(argv[i], "-m") == 0 && i + 1 < argc) {
       params->enc_mode = get_enc_mode(argv[++i]);
-    } else if (strcmp(argv[i], "-pass") == 0 && i + 1 < argc) {
+    }
+    else if (strcmp(argv[i], "-pass") == 0 && i + 1 < argc) {
       params->password = argv[++i];
-    } else {
+    }
+    else {
       printf("Error: Invalid argument %s\n", argv[i]);
       return -1;
     }
@@ -45,7 +53,7 @@ int read_params(Params *params, int argc, char *argv[]) {
   return 0;
 }
 
-StegAlgo get_steg_algo(const char *steg_algo) {
+StegAlgo get_steg_algo(const char* steg_algo) {
   if (steg_algo == NULL) {
     return INVALID_STEG_ALGO;
   }
@@ -61,7 +69,7 @@ StegAlgo get_steg_algo(const char *steg_algo) {
   return INVALID_STEG_ALGO;
 }
 
-EncAlgo get_enc_algo(const char *enc_algo) {
+EncAlgo get_enc_algo(const char* enc_algo) {
   if (enc_algo == NULL || strcmp(enc_algo, "aes128") == 0) {
     return AES128;
   }
@@ -77,7 +85,7 @@ EncAlgo get_enc_algo(const char *enc_algo) {
   return INVALID_ENC_ALGO;
 }
 
-EncMode get_enc_mode(const char *enc_mode) {
+EncMode get_enc_mode(const char* enc_mode) {
   if (enc_mode == NULL || strcmp(enc_mode, "cbc") == 0) {
     return CBC;
   }
@@ -95,30 +103,30 @@ EncMode get_enc_mode(const char *enc_mode) {
 
 
 lsb_func_t get_lsb_function(Operation op, StegAlgo steg_algo) {
-    switch (op) {
-        case EMBED:
-            switch (steg_algo) {
-                case LSB1:
-                    return (lsb_func_t) lsb1_embed;
-                case LSB4:
-                    return (lsb_func_t) lsb4_embed;
-                case LSBI:
-                    return (lsb_func_t) lsbi_embed;
-                default:
-                    return NULL;
-            }
-        case EXTRACT:
-            switch (steg_algo) {
-                case LSB1:
-                    return (lsb_func_t) lsb1_extract;
-                case LSB4:
-                    return (lsb_func_t) lsb4_extract;
-                case LSBI:
-                    return (lsb_func_t) lsbi_extract;
-                default:
-                    return NULL;
-            }
-        default:
-            return NULL;
+  switch (op) {
+  case EMBED:
+    switch (steg_algo) {
+    case LSB1:
+      return (lsb_func_t)lsb1_embed;
+    case LSB4:
+      return (lsb_func_t)lsb4_embed;
+    case LSBI:
+      return (lsb_func_t)lsbi_embed;
+    default:
+      return NULL;
     }
+  case EXTRACT:
+    switch (steg_algo) {
+    case LSB1:
+      return (lsb_func_t)lsb1_extract;
+    case LSB4:
+      return (lsb_func_t)lsb4_extract;
+    case LSBI:
+      return (lsb_func_t)lsbi_extract;
+    default:
+      return NULL;
+    }
+  default:
+    return NULL;
+  }
 }

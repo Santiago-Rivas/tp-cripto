@@ -37,27 +37,27 @@ typedef struct {
 
 /**
  * @brief Reads .bmp image from file
- * 
- * @param[in] filename 
+ *
+ * @param[in] filename
  * @return pointer to allocated BMPImage structure, NULL on failure
  */
-BMPImage *bmp_read(const char *filename);
+BMPImage* bmp_read(const char* filename);
 
 /**
  * @brief Clones existing BMPImage
- * 
+ *
  * @param[in] image image to clone
  * @return pointer to allocated BMPImage structure, NULL on failure
  */
-BMPImage *bmp_clone(const BMPImage *image);
+BMPImage* bmp_clone(const BMPImage* image);
 
 /**
  * @brief Writes .bmp image to file
- * 
- * @param[in] filename 
- * @param[in] image 
+ *
+ * @param[in] filename
+ * @param[in] image
  * @return 0 on success, -1 on failure
  */
-int bmp_write(const char *filename, const BMPImage *image);
+int bmp_write(const char* filename, const BMPImage* image);
 
 #endif // BMP_H

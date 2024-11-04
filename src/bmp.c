@@ -4,11 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-BMPImage *bmp_read(const char *filename)
-{
-  FILE *file = fopen(filename, "rb");
-  if (!file)
-  {
+BMPImage* bmp_read(const char* filename) {
+  FILE* file = fopen(filename, "rb");
+  if (!file) {
     fprintf(stderr, "Failed to open file.\n");
     return NULL;
   }
@@ -16,23 +14,21 @@ BMPImage *bmp_read(const char *filename)
   // Read the BMP header
   uint8_t raw_header[sizeof(BMPHeader)];
   // printf("sizeof(BMPHeader) = %zu\n", sizeof(BMPHeader));
-  if (fread(&raw_header, 1, sizeof(BMPHeader), file) != sizeof(BMPHeader))
-  {
+  if (fread(&raw_header, 1, sizeof(BMPHeader), file) != sizeof(BMPHeader)) {
     fprintf(stderr, "Failed to read header.\n");
     fclose(file);
     return NULL;
   }
   BMPHeader header;
-    //   printf("RAW HEADER: ");
-    // for (size_t i = 0; i < 54; i++) {
-    //     printf("%02X ", raw_header[i]);
-    // }
-    // printf("\n");
+  //   printf("RAW HEADER: ");
+  // for (size_t i = 0; i < 54; i++) {
+  //     printf("%02X ", raw_header[i]);
+  // }
+  // printf("\n");
   memcpy(&header, raw_header, sizeof(BMPHeader));
 
   // Check if the file is a BMP file
-  if (header.type != BMP_MAGIC)
-  {
+  if (header.type != BMP_MAGIC) {
     // printf("header.type = %x BMP_MAGIC = %x\n", header.type, BMP_MAGIC);
     fprintf(stderr, "Not a BMP.\n");
     fclose(file);
@@ -43,9 +39,8 @@ BMPImage *bmp_read(const char *filename)
   uint32_t image_size = header.size - header.offset;
 
   // Allocate memory for the image + pixel data
-  BMPImage *image = malloc(sizeof(BMPImage) + image_size);
-  if (!image)
-  {
+  BMPImage* image = malloc(sizeof(BMPImage) + image_size);
+  if (!image) {
     fprintf(stderr, "Memory allocation error");
     fclose(file);
     return NULL;
@@ -55,8 +50,7 @@ BMPImage *bmp_read(const char *filename)
   image->image_size = image_size;
 
   // Move to the pixel data
-  if (fseek(file, header.offset, SEEK_SET))
-  {
+  if (fseek(file, header.offset, SEEK_SET)) {
     fprintf(stderr, "Failed to move to the pixel data.\n");
     fclose(file);
     free(image);
@@ -67,8 +61,7 @@ BMPImage *bmp_read(const char *filename)
   // printf("header.size = %d\n", image->header.size);
   // printf("header.offset = %d\n", image->header.offset);
 
-  if (fread(image->data, image_size, 1, file) != 1)
-  {
+  if (fread(image->data, image_size, 1, file) != 1) {
     fprintf(stderr, "Failed to read BMP data.\n");
     fclose(file);
     free(image);
@@ -79,9 +72,8 @@ BMPImage *bmp_read(const char *filename)
   return image;
 }
 
-int bmp_write(const char *filename, const BMPImage *image)
-{
-  FILE *file = fopen(filename, "wb");
+int bmp_write(const char* filename, const BMPImage* image) {
+  FILE* file = fopen(filename, "wb");
   if (file == NULL)
   {
     return -1;
@@ -98,7 +90,7 @@ int bmp_write(const char *filename, const BMPImage *image)
   size_t padding = image->header.offset - sizeof(BMPHeader);
   if (padding > 0)
   {
-    char *zeroes = calloc(1, padding);
+    char* zeroes = calloc(1, padding);
     if (zeroes == NULL)
     {
       fclose(file);
@@ -126,10 +118,9 @@ int bmp_write(const char *filename, const BMPImage *image)
   return 0;
 }
 
-BMPImage *bmp_clone(const BMPImage *image)
-{
+BMPImage* bmp_clone(const BMPImage* image) {
   // Allocate memory for the image + pixel data
-  BMPImage *clone = malloc(sizeof(BMPImage) + image->image_size);
+  BMPImage* clone = malloc(sizeof(BMPImage) + image->image_size);
   if (!clone)
   {
     return NULL;
