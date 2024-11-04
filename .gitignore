@@ -6,9 +6,9 @@ out
 
 .vscode
 img/ejemplo.bmp
-img
-out_catedra
-out_ejemplos
-out_pato
+img/grupo*
+run_pato.sh
 out_pato_complete
 test
+out*
+experimental.sh
