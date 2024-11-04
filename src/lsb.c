@@ -30,8 +30,7 @@ static void set_ls_bit(uint8_t* byte, uint8_t value) {
   *byte = (*byte & LSB1_MASK) | value;
 }
 
-size_t lsb1_embed(uint8_t* data, size_t size, uint8_t* carrier,
-  size_t carrier_size) {
+size_t lsb1_embed(uint8_t* data, size_t size, uint8_t* carrier, size_t carrier_size) {
   if (size * 8 > carrier_size) {
     return 0;
   }
@@ -146,10 +145,9 @@ size_t lsbi_embed(uint8_t* data, size_t size, uint8_t* carrier, size_t carrier_s
   uint8_t inversion_bits[LSBI_PATTERNS] = { 0 };
   size_t carrier_index = 0;
 
-  // First pass: Determine bit changes and set up inversion bits
   for (size_t byte_i = 0; byte_i < size; byte_i++) {
     for (int bit_i = LSBI_OPERATIONS; bit_i > 0; bit_i--) {
-      if (carrier_index % 3 != 2) { // Skip every 3rd byte
+      if (carrier_index % 3 != 2) {
         uint8_t hide_bit = get_i_bit(data[byte_i], bit_i);
         uint8_t carrier_bit = get_i_bit(carrier[carrier_index], 1);
         uint8_t pattern_index = get_pattern_index(carrier[carrier_index++]);
@@ -163,23 +161,20 @@ size_t lsbi_embed(uint8_t* data, size_t size, uint8_t* carrier, size_t carrier_s
       }
       else {
         carrier_index++;
-        bit_i++; // Adjust bit index to retry the same hide bit in the next non-skipped carrier byte
+        bit_i++;
       }
     }
   }
 
-  // Determine inversion bits based on change counts
   for (int i = 0; i < LSBI_PATTERNS; i++) {
     inversion_bits[i] = bits_modified[i].changed > bits_modified[i].not_changed ? 1 : 0;
   }
 
-  // Embed inversion bits at the start of the carrier
   size_t embed_size = 0;
   for (size_t j = 0; j < LSBI_PATTERNS && embed_size < carrier_size; j++) {
     set_ls_bit(carrier + embed_size++, inversion_bits[j]);
   }
 
-  // Second pass: Embed actual data with inversion based on pattern
   for (size_t byte_i = 0; byte_i < size && embed_size < carrier_size; byte_i++) {
     for (int bit_i = LSBI_OPERATIONS; bit_i > 0 && embed_size < carrier_size; bit_i--) {
       if (embed_size % 3 != 2) { // Skip every 3rd byte again
@@ -188,8 +183,8 @@ size_t lsbi_embed(uint8_t* data, size_t size, uint8_t* carrier, size_t carrier_s
         set_ls_bit(carrier + embed_size++, inversion_bits[pattern_index] == 1 ? !bit : bit);
       }
       else {
-        embed_size++; // Move to the next carrier byte without embedding
-        bit_i++;      // Adjust bit index to retry the same hide bit
+        embed_size++;
+        bit_i++;
       }
     }
   }

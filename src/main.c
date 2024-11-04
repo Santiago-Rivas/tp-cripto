@@ -165,7 +165,7 @@ int extract(Params* params, CryptData* crypt_data, BMPImage* carrier) {
   embed_size_t embeded_data_size = 0;
   size_t embed_size = 0;
 
-  long image_size = carrier->header.size - 54;
+  long image_size = carrier->header.size - carrier->header.offset;
   carrier->image_size = image_size;
 
   uint8_t* embeded_data = calloc(1, carrier->image_size);
