@@ -137,7 +137,7 @@ size_t lsb4_extract(uint8_t* data_out, size_t size, const uint8_t* carrier, size
 }
 
 size_t lsbi_embed(uint8_t* data, size_t size, uint8_t* carrier, size_t carrier_size) {
-  if (size * 8 > carrier_size) {
+  if ((size * 12 + 4) > carrier_size) {
     return 0;
   }
 

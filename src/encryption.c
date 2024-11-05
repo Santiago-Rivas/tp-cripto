@@ -110,10 +110,6 @@ int decrypt(CryptData* crypt_data, unsigned char** plaintext,
   plaintext_size += len;
   *plaintext_len = plaintext_size;
 
-  if (*plaintext_len != ciphertext_len) {
-    fprintf(stderr, "Warning: Decrypted plaintext length (%ld) differs from ciphertext length (%ld).\n", *plaintext_len, ciphertext_len);
-  }
-
   EVP_CIPHER_CTX_free(ctx);
   return 1;
 }
