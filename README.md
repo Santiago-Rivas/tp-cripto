@@ -103,3 +103,11 @@ Para extraer un archivo (con encripcion):
     -a "aes192"\
     -m "cfb"
 ```
+
+## Solución de los archivos provistos por la cátedra
+
+Para resolver los secretos que se han ocultado en los archivos que nos dio la cátedra basta con ejecutar en el directorio raíz del proyecto:
+
+```bash
+./run_catedra.sh
+```
